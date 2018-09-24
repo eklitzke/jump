@@ -18,11 +18,11 @@ package cmd
 
 import (
 	"bufio"
+	"bytes"
 	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/eklitzke/jump/db"
 	isatty "github.com/mattn/go-isatty"
@@ -75,8 +75,15 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&dbPath, "database", "D", db.DatabasePath(), "database file")
 	rootCmd.PersistentFlags().BoolVarP(&debug, "debug", "d", false, "enable debug mode")
 	rootCmd.PersistentFlags().BoolVar(&logCaller, "log-caller", false, "include caller info in log messages")
-	rootCmd.PersistentFlags().BoolVar(&timeMatching, "time-matching", true, "Enable time matching")
+	rootCmd.PersistentFlags().BoolVar(&timeMatching, "time-matching", true, "enable time matching in searches")
 	rootCmd.PersistentFlags().StringVarP(&logLevel, "log-level", "l", "info", "the log level")
+
+	// Start logging initialization now, so that log messages are properly
+	// formatted on the console if other initialization tasks fail.
+	if isatty.IsTerminal(os.Stderr.Fd()) {
+		w := zerolog.ConsoleWriter{Out: os.Stderr}
+		log.Logger = zerolog.New(w).With().Timestamp().Logger()
+	}
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -93,10 +100,6 @@ func initConfig() {
 }
 
 func initLogging() {
-	if isatty.IsTerminal(os.Stderr.Fd()) {
-		w := zerolog.ConsoleWriter{Out: os.Stderr}
-		log.Logger = zerolog.New(w).With().Timestamp().Logger()
-	}
 	if logCaller {
 		log.Logger = log.Logger.With().Caller().Logger()
 	}
@@ -122,7 +125,7 @@ func initDBHandle() {
 		}
 		// not so serious
 		log.Debug().Err(err).Str("path", dbPath).Msg("database file not found")
-		r = strings.NewReader("")
+		r = &bytes.Buffer{}
 	} else {
 		defer func() {
 			if err := dbFile.Close(); err != nil {
