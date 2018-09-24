@@ -1,4 +1,5 @@
 [![CircleCI](https://circleci.com/gh/eklitzke/jump/tree/master.svg?style=shield)](https://circleci.com/gh/eklitzke/jump/tree/master)
+[![codecov](https://codecov.io/gh/eklitzke/jump/branch/master/graph/badge.svg)](https://codecov.io/gh/eklitzke/jump)
 
 This project implements a simple shell command jumper similar to
 [autojump](https://github.com/wting/autojump) or
