@@ -34,7 +34,7 @@ const (
 var errNoAutojumpDatabase = errors.New("failed to find autojump database")
 
 // LoadAutojumpDatabase loads the autojump database file
-func LoadAutojumpDatabase() (map[string]float64, error) {
+func LoadAutojumpDatabase() (map[string]Weight, error) {
 	x := newXDG(autojumpVendor)
 	dbPath := x.QueryData(autojumpDbFile)
 	if dbPath == "" {
@@ -51,7 +51,7 @@ func LoadAutojumpDatabase() (map[string]float64, error) {
 		}
 	}()
 
-	weights := make(map[string]float64)
+	weights := make(map[string]Weight)
 	scanner := bufio.NewScanner(f)
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -68,7 +68,7 @@ func LoadAutojumpDatabase() (map[string]float64, error) {
 			continue
 		}
 		path := strings.TrimSpace(line[sep:])
-		weights[path] = weight
+		weights[path] = NewWeight(weight)
 	}
 	if err := scanner.Err(); err != nil {
 		log.Error().Err(err).Str("path", dbPath).Msg("error scanning file")

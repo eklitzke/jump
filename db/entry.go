@@ -16,10 +16,13 @@
 
 package db
 
+import "time"
+
 // Entry represents a database entry.
 type Entry struct {
-	Path   string
-	Weight float64
+	Path      string
+	Weight    float64
+	UpdatedAt time.Time
 }
 
 type descendingWeight []Entry

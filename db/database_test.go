@@ -30,7 +30,7 @@ func (s *MySuite) TestDatabaseEndToEnd(c *C) {
 	handle := db.LoadDatabase(f.Name())
 	handle.AdjustWeight("foo", 1)
 	w := handle.Weights["foo"]
-	c.Assert(w > 0, Equals, true)
+	c.Assert(w.Value > 0, Equals, true)
 	c.Assert(handle.Weights, HasLen, 1)
 	c.Assert(handle.Save(), IsNil)
 	c.Assert(handle.Save(), IsNil)

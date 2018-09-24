@@ -52,8 +52,10 @@ func Execute() {
 
 	// Save the database; this is a no-op if the database hasn't been
 	// mutated.
-	if err := handle.Save(); err != nil {
-		log.Fatal().Err(err).Msg("failed to save database")
+	if handle != nil {
+		if err := handle.Save(); err != nil {
+			log.Fatal().Err(err).Msg("failed to save database")
+		}
 	}
 }
 

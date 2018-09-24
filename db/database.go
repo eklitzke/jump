@@ -28,40 +28,39 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/rs/zerolog/log"
 )
 
 // Database represents the database.
 type Database struct {
-	dirty   bool               // dirty bit
-	path    string             // path to the underlying file
-	Weights map[string]float64 // map of entry to weight
+	dirty   bool              // dirty bit
+	path    string            // path to the underlying file
+	Weights map[string]Weight // map of entry to weight
 }
 
 // AdjustWeight adjusts the weight of a path. The adjusted weight value is
 // returned.
-func (d *Database) AdjustWeight(path string, weight float64) float64 {
+func (d *Database) AdjustWeight(path string, weight float64) {
 	d.dirty = true
 
 	var newWeight float64
 	if weight >= 0 {
 		// increase the weight
-		current := d.Weights[path]
-		newWeight = math.Sqrt(current*current + weight*weight)
-		d.Weights[path] = newWeight
-		return newWeight
+		current := d.Weights[path].Value
+		d.Weights[path] = NewWeight(math.Sqrt(current*current + weight*weight))
+		return
 	}
 
 	// decrease the weight
-	newWeight = d.Weights[path] + weight
+	newWeight = d.Weights[path].Value + weight
 	if newWeight <= 0 {
 		// if the weight is negative or zero, delete it
 		d.Remove(path)
-		return 0
+		return
 	}
-	d.Weights[path] = newWeight
-	return newWeight
+	d.Weights[path] = NewWeight(newWeight)
 }
 
 // Remove removes a path from the database.
@@ -74,7 +73,11 @@ func (d *Database) Remove(path string) {
 func (d *Database) toEntryList() []Entry {
 	var entries []Entry
 	for path, weight := range d.Weights {
-		entries = append(entries, Entry{Path: path, Weight: weight})
+		entries = append(entries, Entry{
+			Path:      path,
+			Weight:    weight.Value,
+			UpdatedAt: weight.UpdatedAt,
+		})
 	}
 	return entries
 }
@@ -84,7 +87,8 @@ func (d *Database) Dump(w io.Writer) error {
 	entries := d.toEntryList()
 	sort.Sort(descendingWeight(entries))
 	for _, entry := range entries {
-		if _, err := fmt.Fprintf(w, "%.9f %s\n", entry.Weight, entry.Path); err != nil {
+		t := entry.UpdatedAt.Round(time.Second).Format("2006-01-02 15:04 MST")
+		if _, err := fmt.Fprintf(w, "%-12.6f %-25s %s\n", entry.Weight, t, entry.Path); err != nil {
 			return err
 		}
 	}
@@ -132,7 +136,7 @@ func (d *Database) Prune(maxEntries int) {
 func (d *Database) SumWeights() float64 {
 	var sum float64
 	for _, weight := range d.Weights {
-		sum += weight
+		sum += weight.Value
 	}
 	return sum
 }
@@ -197,7 +201,7 @@ func (d *Database) search(cmp stringCompare, needle string) (Entry, error) {
 	var candidates []Entry
 	for path, weight := range d.Weights {
 		if cmp(path, needle) {
-			candidates = append(candidates, Entry{Path: path, Weight: weight})
+			candidates = append(candidates, Entry{Path: path, Weight: weight.Value})
 		}
 	}
 	if candidates == nil {
@@ -224,7 +228,7 @@ func (d *Database) Search(needle string) Entry {
 
 // LoadDatabase loads a database file.
 func LoadDatabase(path string) *Database {
-	db := &Database{path: path, Weights: make(map[string]float64)}
+	db := &Database{path: path, Weights: make(map[string]Weight)}
 	dbFile, err := os.Open(path)
 	if err != nil {
 		if os.IsNotExist(err) {
