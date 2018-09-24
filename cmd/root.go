@@ -17,11 +17,10 @@
 package cmd
 
 import (
-	"fmt"
 	"os"
 
+	"github.com/eklitzke/jump/db"
 	isatty "github.com/mattn/go-isatty"
-	homedir "github.com/mitchellh/go-homedir"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
@@ -29,6 +28,7 @@ import (
 )
 
 var cfgFile string
+var dbPath string
 var logCaller bool
 var logLevel string
 
@@ -54,7 +54,8 @@ func init() {
 	cobra.OnInitialize(initConfig)
 	cobra.OnInitialize(initLogging)
 
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.jump.yaml)")
+	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", db.ConfigPath(), "config file")
+	rootCmd.PersistentFlags().StringVarP(&dbPath, "database", "d", db.DatabasePath(), "database file")
 	rootCmd.PersistentFlags().BoolVar(&logCaller, "log-caller", false, "include caller info in log messages")
 	rootCmd.PersistentFlags().StringVarP(&logLevel, "log-level", "l", "info", "the log level")
 }
@@ -62,26 +63,13 @@ func init() {
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
 	if cfgFile != "" {
-		// Use config file from the flag.
 		viper.SetConfigFile(cfgFile)
-	} else {
-		// Find home directory.
-		home, err := homedir.Dir()
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-
-		// Search config in home directory with name ".jump" (without extension).
-		viper.AddConfigPath(home)
-		viper.SetConfigName(".jump")
 	}
-
-	viper.AutomaticEnv() // read in environment variables that match
+	viper.AutomaticEnv()
 
 	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err == nil {
-		fmt.Println("Using config file:", viper.ConfigFileUsed())
+		log.Info().Str("file", viper.ConfigFileUsed()).Msg("read config file")
 	}
 }
 

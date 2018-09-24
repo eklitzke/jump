@@ -132,7 +132,12 @@ func (d *Database) SumWeights() float64 {
 
 // Save atomically saves the database.
 func (d *Database) Save() error {
+	// ensure the directory exists
 	dir := filepath.Dir(d.path)
+	ensureDirectory(dir)
+
+	// create the temporary file in the same directory as the destination
+	// file, to ensure that the rename operation is atomic
 	temp, err := ioutil.TempFile(dir, fmt.Sprintf(".%s-", dbName))
 	if err != nil {
 		log.Error().Err(err).Str("dir", dir).Msg("failed to create temporary save file")
@@ -150,6 +155,7 @@ func (d *Database) Save() error {
 		}
 	}()
 
+	// encode and flush the file
 	w := bufio.NewWriter(temp)
 	enc := gob.NewEncoder(w)
 	if err := enc.Encode(d); err != nil {
@@ -160,6 +166,8 @@ func (d *Database) Save() error {
 		log.Error().Err(err).Msg("failed to flush temporary file")
 		return err
 	}
+
+	// atomic rename
 	return os.Rename(tempName, d.path)
 }
 
@@ -231,4 +239,19 @@ func LoadDefaultDatabase() *Database {
 		defaultDB = NewDatabase(DatabasePath())
 	}
 	return defaultDB
+}
+
+// ensureDirectory ensures that a directory exists
+func ensureDirectory(dir string) {
+	_, err := os.Stat(dir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			// create the data directory
+			if err := os.Mkdir(dir, 0700); err != nil {
+				log.Fatal().Err(err).Str("dir", dir).Msg("failed to create directory")
+			}
+		} else {
+			log.Fatal().Err(err).Str("dir", dir).Msg("failed to stat directory")
+		}
+	}
 }

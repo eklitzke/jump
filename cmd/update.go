@@ -24,14 +24,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var weight float64
+var updateWeight float64
 
 // updateCmd represents the add command
 var updateCmd = &cobra.Command{
 	Use:   "update",
-	Short: "Update the database",
+	Short: "Update database weights",
 	Run: func(cmd *cobra.Command, args []string) {
-		if weight == 0 {
+		if updateWeight == 0 {
 			log.Fatal().Msg("ignoring update command for 0 weight")
 		}
 		if len(args) == 0 {
@@ -56,7 +56,7 @@ var updateCmd = &cobra.Command{
 				continue
 			}
 			didUpdate = true
-			handle.AdjustWeight(dir, weight)
+			handle.AdjustWeight(dir, updateWeight)
 		}
 
 		// fail if we didn't find anything
@@ -73,5 +73,5 @@ var updateCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(updateCmd)
-	updateCmd.Flags().Float64VarP(&weight, "weight", "w", 15, "Weight to adjust by (may be negative)")
+	updateCmd.Flags().Float64VarP(&updateWeight, "weight", "w", 15, "Weight to adjust by (may be negative)")
 }

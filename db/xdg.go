@@ -17,38 +17,42 @@
 package db
 
 import (
-	"os"
 	"path/filepath"
 
-	"github.com/OpenPeeDeeP/xdg"
-	"github.com/rs/zerolog/log"
+	goxdg "github.com/OpenPeeDeeP/xdg"
 )
 
 const (
-	xdgName = "jump"   // the xdg application name
-	dbName  = "db.gob" // name of the database file
+	vendorName = "jump"     // the xdg application name
+	dbName     = "db.gob"   // name of the database file
+	configName = "jump.yml" // the config file name
 )
 
 // full path to the database file
 var dbPath string
 
-// DatabasePath looks up the full path to the database file.
+// a handle to an xdg instance
+var xdg *goxdg.XDG
+
+func init() {
+	xdg = newXDG(vendorName)
+}
+
+func newXDG(vendor string) *goxdg.XDG {
+	return goxdg.New(vendor, "")
+}
+
+// DatabasePath looks up the full path to the database file. The method ensures
+// the data directory exists, so writers to the database don't need to handle
+// this case.
 func DatabasePath() string {
-	if dbPath == "" {
-		x := xdg.New(xdgName, "")
-		dataHome := x.DataHome()
-		_, err := os.Stat(dataHome)
-		if err != nil {
-			if os.IsNotExist(err) {
-				// create the data directory
-				if err := os.Mkdir(dataHome, 0700); err != nil {
-					log.Fatal().Err(err).Str("dir", dataHome).Msg("failed to create data directory")
-				}
-			} else {
-				log.Fatal().Err(err).Str("dir", dataHome).Msg("failed to stat data directory")
-			}
-		}
-		dbPath = filepath.Join(dataHome, dbName)
-	}
-	return dbPath
+	// We don't use xdg.QueryData here because it checks that the containing
+	// directory exists; we defer directory creation until we actually save
+	// the database.
+	return filepath.Join(xdg.DataHome(), dbName)
+}
+
+// ConfigPath returns the path to the jump config file.
+func ConfigPath() string {
+	return filepath.Join(xdg.ConfigHome(), configName)
 }

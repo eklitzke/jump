@@ -24,10 +24,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// statsCmd represents the dump command
-var statsCmd = &cobra.Command{
-	Use:   "stats",
-	Short: "Dump database statistics",
+// dumpCmd represents the dump command
+var dumpCmd = &cobra.Command{
+	Use:   "dump",
+	Short: "Dump database contents as plaintext",
 	Run: func(cmd *cobra.Command, args []string) {
 		handle := db.LoadDefaultDatabase()
 		if err := handle.Dump(os.Stdout); err != nil {
@@ -37,5 +37,5 @@ var statsCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(statsCmd)
+	rootCmd.AddCommand(dumpCmd)
 }

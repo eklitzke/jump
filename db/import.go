@@ -23,7 +23,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/OpenPeeDeeP/xdg"
 	"github.com/rs/zerolog/log"
 )
 
@@ -36,7 +35,7 @@ var errNoAutojumpDatabase = errors.New("failed to find autojump database")
 
 // LoadAutojumpDatabase loads the autojump database file
 func LoadAutojumpDatabase() (map[string]float64, error) {
-	x := xdg.New(autojumpVendor, "")
+	x := newXDG(autojumpVendor)
 	dbPath := x.QueryData(autojumpDbFile)
 	if dbPath == "" {
 		return nil, errNoAutojumpDatabase
