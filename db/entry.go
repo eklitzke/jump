@@ -37,17 +37,6 @@ func (b ascendingWeight) Len() int           { return len(b) }
 func (b ascendingWeight) Swap(i, j int)      { b[i], b[j] = b[j], b[i] }
 func (b ascendingWeight) Less(i, j int) bool { return b[i].Weight > b[j].Weight }
 
-// FindHighestWeight searches an entry list for the entry with the highest weight.
-func FindHighestWeight(entries []Entry) Entry {
-	var best Entry
-	for _, entry := range entries {
-		if entry.Weight > best.Weight {
-			best = entry
-		}
-	}
-	return best
-}
-
 func toEntryList(w WeightMap) []Entry {
 	var entries []Entry
 	for path, weight := range w {

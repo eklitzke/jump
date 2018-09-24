@@ -26,20 +26,28 @@ import (
 	"testing"
 
 	"github.com/eklitzke/jump/db"
+	"github.com/rs/zerolog"
 	. "gopkg.in/check.v1"
 )
 
 // Hook up gocheck into the "go test" runner.
-func Test(t *testing.T) { TestingT(t) }
+func Test(t *testing.T) {
+	zerolog.SetGlobalLevel(zerolog.Disabled)
+	TestingT(t)
+}
 
 type MySuite struct{}
 
-var _ = Suite(&MySuite{})
-
-func (s *MySuite) TestDatabaseEndToEnd(c *C) {
+func (s *MySuite) createTempDir(c *C) string {
 	baseDir, err := ioutil.TempDir("", "jump-test-")
 	c.Assert(err, IsNil)
 	c.Assert(baseDir, Not(Equals), "")
+	return baseDir
+}
+
+// TODO: split this bad boy up
+func (s *MySuite) TestDatabaseEndToEnd(c *C) {
+	baseDir := s.createTempDir(c)
 	defer os.RemoveAll(baseDir)
 
 	foo := filepath.Join(baseDir, "foo")
@@ -94,7 +102,4 @@ func (s *MySuite) TestDatabaseEndToEnd(c *C) {
 	c.Assert(handle.Weights, HasLen, 3)
 }
 
-func (s *MySuite) TestConfig(c *C) {
-	c.Assert(db.DatabasePath(), Not(Equals), "")
-	c.Assert(db.ConfigPath(), Not(Equals), "")
-}
+var _ = Suite(&MySuite{})
