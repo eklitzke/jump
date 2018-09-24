@@ -20,5 +20,12 @@ $ curl -sL https://raw.githubusercontent.com/eklitzke/jump/master/jump.sh -o ~/.
 $ echo '. ~/.jump.sh' >> ~/.bashrc
 ```
 
+The `jump.sh` shell code makes use of `PROMPT_COMMAND` in order to maintain the
+jump database. That means that blindly overwriting `PROMPT_COMMAND` elsewhere in
+your Bash profile will cause `jump` to stop working. If you want to set your own
+`PROMPT_COMMAND` all you need to do is make sure you append to the variable
+rather than overwriting it (you can look at `jump.sh` itself for an example of
+how to do this correctly).
+
 This project is free software licensed under the terms of the GPLv3+ (see the
 accompanying LICENSE file for details).

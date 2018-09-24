@@ -16,13 +16,19 @@
 # You should have received a copy of the GNU General Public License along with
 # jump. If not, see <http://www.gnu.org/licenses/>.
 
-# A simple jumper.
+_print_red() {
+  printf '\033[0;31m%s\033[0m\n' "$1"
+}
+
+# Try to jump to the best matching entry in the jump database.
 jump_jump() {
   local dest
   dest="$(jump search "$1")"
   if [[ -n "$dest" ]] && [[ -d "$dest" ]]; then
-    printf '\033[0;31m%s\033[0m\n' "$dest"
-    cd "$dest"
+    _print_red "$dest"
+    cd "$dest" || return
+  else
+    _print_red "no matches found"
   fi
 }
 
