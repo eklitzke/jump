@@ -28,9 +28,6 @@ const (
 	configName = "jump.yml" // the config file name
 )
 
-// full path to the database file
-var dbPath string
-
 // a handle to an xdg instance
 var xdg *goxdg.XDG
 
