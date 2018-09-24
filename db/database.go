@@ -66,13 +66,19 @@ func (d *Database) Remove(path string) {
 	delete(d.Weights, path)
 }
 
-// Dump prints the database to the specified writer.
-func (d *Database) Dump(w io.Writer) error {
-	entries := []Entry{}
+// get an unsorted entry list
+func (d *Database) toEntryList() []Entry {
+	var entries []Entry
 	for path, weight := range d.Weights {
 		entries = append(entries, Entry{Path: path, Weight: weight})
 	}
-	sort.Sort(byWeight(entries))
+	return entries
+}
+
+// Dump prints the database to the specified writer.
+func (d *Database) Dump(w io.Writer) error {
+	entries := d.toEntryList()
+	sort.Sort(descendingWeight(entries))
 	for _, entry := range entries {
 		if _, err := fmt.Fprintf(w, "%.9f %s\n", entry.Weight, entry.Path); err != nil {
 			return err
@@ -82,7 +88,8 @@ func (d *Database) Dump(w io.Writer) error {
 }
 
 // Prune removes entries from the database that no longer exist.
-func (d *Database) Prune() {
+func (d *Database) Prune(maxEntries int) {
+	// delete non-existent entries
 	for path := range d.Weights {
 		st, err := os.Stat(path)
 		if err != nil {
@@ -92,6 +99,23 @@ func (d *Database) Prune() {
 		if !st.IsDir() {
 			log.Debug().Msg("removing non-directory entry")
 			delete(d.Weights, path)
+		}
+	}
+
+	// delete low weight entries
+	// FIXME: this isn't the best heuristic and could be improved
+	if maxEntries <= 0 {
+		return // ignore zero/negative value
+	}
+	deleteCount := len(d.Weights) - maxEntries
+	if deleteCount > 0 {
+		entries := d.toEntryList()
+		sort.Sort(ascendingWeight(entries))
+		for i, entry := range entries {
+			delete(d.Weights, entry.Path)
+			if i >= deleteCount {
+				break
+			}
 		}
 	}
 }

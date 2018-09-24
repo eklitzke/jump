@@ -22,11 +22,17 @@ type Entry struct {
 	Weight float64
 }
 
-type byWeight []Entry
+type descendingWeight []Entry
 
-func (b byWeight) Len() int           { return len(b) }
-func (b byWeight) Swap(i, j int)      { b[i], b[j] = b[j], b[i] }
-func (b byWeight) Less(i, j int) bool { return b[i].Weight > b[j].Weight } // descending sort
+func (b descendingWeight) Len() int           { return len(b) }
+func (b descendingWeight) Swap(i, j int)      { b[i], b[j] = b[j], b[i] }
+func (b descendingWeight) Less(i, j int) bool { return b[i].Weight > b[j].Weight }
+
+type ascendingWeight []Entry
+
+func (b ascendingWeight) Len() int           { return len(b) }
+func (b ascendingWeight) Swap(i, j int)      { b[i], b[j] = b[j], b[i] }
+func (b ascendingWeight) Less(i, j int) bool { return b[i].Weight > b[j].Weight }
 
 // FindHighestWeight searches an entry list for the entry with the highest weight.
 func FindHighestWeight(entries []Entry) Entry {

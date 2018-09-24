@@ -22,13 +22,15 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var pruneCount int
+
 // pruneCmd represents the prune command
 var pruneCmd = &cobra.Command{
 	Use:   "prune",
 	Short: "Prune invalid entries from the database",
 	Run: func(cmd *cobra.Command, args []string) {
 		handle := db.LoadDefaultDatabase()
-		handle.Prune()
+		handle.Prune(pruneCount)
 		if err := handle.Save(); err != nil {
 			log.Fatal().Err(err).Msg("failed to save database")
 		}
@@ -37,4 +39,5 @@ var pruneCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(pruneCmd)
+	pruneCmd.Flags().IntVarP(&pruneCount, "num-database-entries", "n", 1000, "Number of databse entries to keep")
 }
