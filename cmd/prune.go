@@ -17,8 +17,6 @@
 package cmd
 
 import (
-	"github.com/eklitzke/jump/db"
-	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 )
 
@@ -29,11 +27,7 @@ var pruneCmd = &cobra.Command{
 	Use:   "prune",
 	Short: "Automatically prune old or invalid database entries",
 	Run: func(cmd *cobra.Command, args []string) {
-		handle := db.LoadDefaultDatabase()
 		handle.Prune(pruneCount)
-		if err := handle.Save(); err != nil {
-			log.Fatal().Err(err).Msg("failed to save database")
-		}
 	},
 }
 

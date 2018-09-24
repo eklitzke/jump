@@ -19,7 +19,6 @@ package cmd
 import (
 	"os"
 
-	"github.com/eklitzke/jump/db"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 )
@@ -43,8 +42,6 @@ var updateCmd = &cobra.Command{
 		}
 
 		// try to update each argument, first checking that it exists and is a directory
-		didUpdate := false
-		handle := db.LoadDefaultDatabase()
 		for _, dir := range args {
 			st, err := os.Stat(dir)
 			if err != nil {
@@ -55,18 +52,7 @@ var updateCmd = &cobra.Command{
 				log.Warn().Str("path", dir).Msg("specified file is not a directory")
 				continue
 			}
-			didUpdate = true
 			handle.AdjustWeight(dir, updateWeight)
-		}
-
-		// fail if we didn't find anything
-		if !didUpdate {
-			log.Fatal().Msg("could not find any directories to update")
-		}
-
-		// else persist the database
-		if err := handle.Save(); err != nil {
-			log.Fatal().Err(err).Msg("failed to save database")
 		}
 	},
 }

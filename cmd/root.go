@@ -31,6 +31,7 @@ var cfgFile string
 var dbPath string
 var logCaller bool
 var logLevel string
+var handle *db.Database
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -48,11 +49,18 @@ func Execute() {
 	if err := rootCmd.Execute(); err != nil {
 		log.Fatal().Err(err).Msg("fatal error running command")
 	}
+
+	// Save the database; this is a no-op if the database hasn't been
+	// mutated.
+	if err := handle.Save(); err != nil {
+		log.Fatal().Err(err).Msg("failed to save database")
+	}
 }
 
 func init() {
 	cobra.OnInitialize(initConfig)
 	cobra.OnInitialize(initLogging)
+	cobra.OnInitialize(initDBHandle)
 
 	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", db.ConfigPath(), "config file")
 	rootCmd.PersistentFlags().StringVarP(&dbPath, "database", "d", db.DatabasePath(), "database file")
@@ -88,4 +96,8 @@ func initLogging() {
 	zerolog.SetGlobalLevel(level)
 	log.Debug().Str("level", level.String()).Msg("logging initialized")
 
+}
+
+func initDBHandle() {
+	handle = db.LoadDatabase(dbPath)
 }

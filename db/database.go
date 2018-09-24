@@ -34,6 +34,7 @@ import (
 
 // Database represents the database.
 type Database struct {
+	dirty   bool               // dirty bit
 	path    string             // path to the underlying file
 	Weights map[string]float64 // map of entry to weight
 }
@@ -41,6 +42,8 @@ type Database struct {
 // AdjustWeight adjusts the weight of a path. The adjusted weight value is
 // returned.
 func (d *Database) AdjustWeight(path string, weight float64) float64 {
+	d.dirty = true
+
 	var newWeight float64
 	if weight >= 0 {
 		// increase the weight
@@ -63,6 +66,7 @@ func (d *Database) AdjustWeight(path string, weight float64) float64 {
 
 // Remove removes a path from the database.
 func (d *Database) Remove(path string) {
+	d.dirty = true
 	delete(d.Weights, path)
 }
 
@@ -95,11 +99,13 @@ func (d *Database) Prune(maxEntries int) {
 		if err != nil {
 			log.Debug().Err(err).Msg("failed to stat file")
 			delete(d.Weights, path)
+			d.dirty = true
 			continue
 		}
 		if !st.IsDir() {
 			log.Debug().Msg("removing non-directory entry")
 			delete(d.Weights, path)
+			d.dirty = true
 		}
 	}
 
@@ -118,6 +124,7 @@ func (d *Database) Prune(maxEntries int) {
 				break
 			}
 		}
+		d.dirty = true
 	}
 }
 
@@ -132,6 +139,11 @@ func (d *Database) SumWeights() float64 {
 
 // Save atomically saves the database.
 func (d *Database) Save() error {
+	if !d.dirty {
+		log.Debug().Msg("database not dirty, skipping save")
+		return nil
+	}
+
 	// ensure the directory exists
 	dir := filepath.Dir(d.path)
 	ensureDirectory(dir)
@@ -168,7 +180,13 @@ func (d *Database) Save() error {
 	}
 
 	// atomic rename
-	return os.Rename(tempName, d.path)
+	if err := os.Rename(tempName, d.path); err != nil {
+		log.Error().Err(err).Str("dbpath", d.path).Str("tempfile", tempName).Msg("failed to rename db file")
+		return err
+	}
+
+	d.dirty = false
+	return nil
 }
 
 var errNotFound = errors.New("entry not found")
@@ -204,8 +222,8 @@ func (d *Database) Search(needle string) Entry {
 	return Entry{}
 }
 
-// NewDatabase loads a database file.
-func NewDatabase(path string) *Database {
+// LoadDatabase loads a database file.
+func LoadDatabase(path string) *Database {
 	db := &Database{path: path, Weights: make(map[string]float64)}
 	dbFile, err := os.Open(path)
 	if err != nil {
@@ -228,17 +246,6 @@ func NewDatabase(path string) *Database {
 		log.Error().Err(err).Msg("failed to decode database file")
 	}
 	return db
-}
-
-// defaultDB is a handle to a default database
-var defaultDB *Database
-
-// LoadDefaultDatabase loads the default database handle.
-func LoadDefaultDatabase() *Database {
-	if defaultDB == nil {
-		defaultDB = NewDatabase(DatabasePath())
-	}
-	return defaultDB
 }
 
 // ensureDirectory ensures that a directory exists

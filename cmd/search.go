@@ -19,7 +19,6 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/eklitzke/jump/db"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 )
@@ -29,7 +28,6 @@ var searchCmd = &cobra.Command{
 	Use:   "search",
 	Short: "Search the database for matches",
 	Run: func(cmd *cobra.Command, args []string) {
-		handle := db.LoadDefaultDatabase()
 		entry := handle.Search(args[0])
 		if entry.Path != "" {
 			log.Debug().Str("path", entry.Path).Float64("weight", entry.Weight).Msg("found match")
