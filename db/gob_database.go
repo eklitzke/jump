@@ -18,7 +18,6 @@ package db
 
 import (
 	"encoding/gob"
-	"encoding/json"
 	"io"
 	"math"
 	"os"
@@ -113,8 +112,15 @@ func (d *GobDatabase) Save(w io.Writer) error {
 }
 
 // Search searches for the best database entry.
-func (d *GobDatabase) Search(needle string) Entry {
+func (d *GobDatabase) Search(needles ...string) Entry {
 	s := NewSearcher(d.Weights, d.opts)
+
+	// TODO: Implement multi query search, right now we only query the last
+	// argument.
+	if len(needles) == 0 {
+		return Entry{}
+	}
+	needle := needles[len(needles)-1]
 
 	// first check exact suffix matches
 	exact := needle
@@ -142,7 +148,7 @@ func (d *GobDatabase) Search(needle string) Entry {
 }
 
 // Dump prints the database to the specified writer.
-func (d *GobDatabase) Dump(w io.Writer) error {
+func (d *GobDatabase) Dump() interface{} {
 	output := struct {
 		Format  string  `json:"format"`
 		Weights []Entry `json:"weights"`
@@ -151,9 +157,7 @@ func (d *GobDatabase) Dump(w io.Writer) error {
 		Weights: toEntryList(d.Weights),
 	}
 	sort.Sort(descendingWeight(output.Weights))
-	enc := json.NewEncoder(w)
-	enc.SetIndent("", "  ")
-	return enc.Encode(output)
+	return output
 }
 
 // Replace replaces the underlying weight map.

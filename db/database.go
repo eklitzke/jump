@@ -16,18 +16,39 @@
 
 package db
 
-import "io"
+import (
+	"io"
+)
 
 // Database represents the database.
 type Database interface {
-	AdjustWeight(path string, weight float64)
+	// Adjust the weight for a given path; weight can be positive or
+	// negative.
+	AdjustWeight(string, float64)
+
+	// Does the database need to be saved?
+	// TODO: this is a little hacky.
 	Dirty() bool
-	Dump(io.Writer) error
-	Remove(path string)
+
+	// Return a JSON serializable representation of the database.
+	Dump() interface{}
+
+	// Remove a path from the database.
+	Remove(string)
+
+	// Replace the current weights.
+	// TODO: this is hacky
 	Replace(WeightMap)
+
+	// Prune the database.
 	Prune(int)
+
+	// Save the database to a writer.
 	Save(io.Writer) error
-	Search(needle string) Entry
+
+	// Search for a query and find the best match.
+	// TODO: allow this to return multiple results.
+	Search(...string) Entry
 }
 
 // NewDatabase loads a database file.

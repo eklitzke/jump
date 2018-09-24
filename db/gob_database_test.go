@@ -59,9 +59,7 @@ func (s *MySuite) TestDatabaseEndToEnd(c *C) {
 	handle.Prune(100)
 	c.Assert(handle.Weights, HasLen, 1)
 
-	buf = new(bytes.Buffer)
-	c.Assert(handle.Dump(buf), IsNil)
-	c.Assert(buf.String(), Not(Equals), "")
+	c.Assert(handle.Dump(), Not(IsNil))
 
 	handle.AdjustWeight(foo, -0.5)
 	c.Assert(handle.Weights, HasLen, 1)

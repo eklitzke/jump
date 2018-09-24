@@ -21,23 +21,34 @@ _print_red() {
 }
 
 # Try to jump to the best matching entry in the jump database.
-_jump_jump() {
+j() {
   local dest
-  dest="$(jump search "$1")"
+  dest="$(jump search "$@")"
   if [[ -n "$dest" ]] ; then
     _print_red "$dest"
-    cd "$dest" || return
+    cd "$dest" || return 1
   else
     _print_red "no matches found"
   fi
 }
 
-# If the jump command is available, alias j=_jump_jump and add "jump update" to
-# the PROMPT_COMMAND.
-if command -v jump &>/dev/null; then
-  if [[ "x${_JUMP_ENABLED}" = x ]]; then
-    PROMPT_COMMAND="${PROMPT_COMMAND};jump update"
-    _JUMP_ENABLED=yes
+# Jump to child directory.
+jc() {
+  if [[ "$1" == -* ]] && [[ "$1" != "--" ]]; then
+    j "$@"
+  else
+    j "$PWD" "$@"
   fi
-  alias j=_jump_jump
+}
+
+# N.B. jo and jco are not defined because they shouldn't exist in the first
+# place.
+
+# Check if jump is available, and if so set up PROMPT_COMMAND.
+if command -v jump &>/dev/null; then
+  if [[ "x${JUMP_ENABLED}" = x ]]; then
+    PROMPT_COMMAND="${PROMPT_COMMAND};jump update"
+    JUMP_ENABLED=yes
+    export JUMP_ENABLED
+  fi
 fi

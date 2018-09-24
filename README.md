@@ -26,7 +26,7 @@ If you use Bash and want to try out my code, you can set it up like this:
 
 ```bash
 # Install the jump command
-$ go get github.com/eklitzke/jump
+$ go get -u github.com/eklitzke/jump
 
 # Source jump.sh in your .bashrc
 $ curl -sL https://raw.githubusercontent.com/eklitzke/jump/master/jump.sh -o ~/.jump.sh
