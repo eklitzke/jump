@@ -41,7 +41,6 @@ var searchCmd = &cobra.Command{
 			} else {
 				fmt.Println(entry.Path)
 			}
-
 		}
 	},
 }

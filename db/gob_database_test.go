@@ -48,11 +48,11 @@ func (s *MySuite) TestDatabaseEndToEnd(c *C) {
 	c.Assert(handle.Weights, HasLen, 1)
 	c.Assert(w == handle.Weights[foo], Equals, true)
 
-	entry := handle.Search("nomatch")
-	c.Assert(entry, Equals, db.Entry{})
+	entries := handle.Search(1, "nomatch")
+	c.Assert(entries, HasLen, 0)
 	for _, query := range []string{"f", "foo", "oo"} {
-		entry = handle.Search(query)
-		c.Assert(entry.Path, Equals, foo)
+		entries = handle.Search(1, query)
+		c.Assert(entries[0].Path, Equals, foo)
 	}
 
 	// remove the non-existent directory
