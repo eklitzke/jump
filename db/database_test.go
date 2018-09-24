@@ -52,15 +52,15 @@ func (s *MySuite) TestDatabaseEndToEnd(c *C) {
 	handle := db.NewGobDatabase(f.Name(), db.Options{})
 
 	handle.AdjustWeight(foo, 1)
-	w := handle.Weights()[foo]
+	w := handle.Weights[foo]
 	c.Assert(w.Value > 0, Equals, true)
-	c.Assert(handle.Weights(), HasLen, 1)
+	c.Assert(handle.Weights, HasLen, 1)
 	c.Assert(handle.Save(), IsNil)
 	c.Assert(handle.Save(), IsNil)
 
 	handle = db.NewGobDatabase(f.Name(), db.Options{TimeMatching: true})
-	c.Assert(handle.Weights(), HasLen, 1)
-	c.Assert(w == handle.Weights()[foo], Equals, true)
+	c.Assert(handle.Weights, HasLen, 1)
+	c.Assert(w == handle.Weights[foo], Equals, true)
 
 	entry := handle.Search("nomatch")
 	c.Assert(entry, Equals, db.Entry{})
@@ -71,16 +71,16 @@ func (s *MySuite) TestDatabaseEndToEnd(c *C) {
 
 	// remove the non-existent directory
 	handle.Prune(100)
-	c.Assert(handle.Weights(), HasLen, 1)
+	c.Assert(handle.Weights, HasLen, 1)
 
 	buf := bytes.Buffer{}
 	c.Assert(handle.Dump(&buf), IsNil)
 	c.Assert(buf.String(), Not(Equals), "")
 
 	handle.AdjustWeight(foo, -0.5)
-	c.Assert(handle.Weights(), HasLen, 1)
+	c.Assert(handle.Weights, HasLen, 1)
 	handle.AdjustWeight(foo, -2)
-	c.Assert(handle.Weights(), HasLen, 0)
+	c.Assert(handle.Weights, HasLen, 0)
 
 	for i := 0; i < 10; i++ {
 		dirName := filepath.Join(os.TempDir(), "dbtest", strconv.Itoa(i))
@@ -96,7 +96,7 @@ func (s *MySuite) TestDatabaseEndToEnd(c *C) {
 	handle.AdjustWeight(nonDir, 1)
 
 	handle.Prune(3)
-	c.Assert(handle.Weights(), HasLen, 3)
+	c.Assert(handle.Weights, HasLen, 3)
 }
 
 func (s *MySuite) TestConfig(c *C) {

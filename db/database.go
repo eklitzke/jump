@@ -16,11 +16,13 @@
 
 package db
 
+import "io"
+
 // Database represents the database.
 type Database interface {
 	AdjustWeight(path string, weight float64)
+	Dump(io.Writer) error
 	Remove(path string)
-	Weights() WeightMap // FIXME: this is hacky and overly tied to the gob implementation
 	Replace(WeightMap)
 	Prune(int)
 	Save() error

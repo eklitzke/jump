@@ -19,6 +19,7 @@ package db
 import (
 	"bufio"
 	"encoding/gob"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -27,7 +28,6 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
-	"time"
 
 	"github.com/rs/zerolog/log"
 )
@@ -37,11 +37,7 @@ type GobDatabase struct {
 	dirty   bool      // dirty bit
 	path    string    // path to the underlying file
 	opts    Options   // database options
-	weights WeightMap // map of entry to weight
-}
-
-func (d *GobDatabase) Weights() WeightMap {
-	return d.weights
+	Weights WeightMap // map of entry to weight
 }
 
 // AdjustWeight adjusts the weight of a path. The adjusted weight value is
@@ -52,54 +48,43 @@ func (d *GobDatabase) AdjustWeight(path string, weight float64) {
 	var newWeight float64
 	if weight >= 0 {
 		// increase the weight
-		current := d.weights[path].Value
-		d.weights[path] = NewWeight(math.Sqrt(current*current + weight*weight))
+		current := d.Weights[path].Value
+		d.Weights[path] = NewWeight(math.Sqrt(current*current + weight*weight))
 		return
 	}
 
 	// decrease the weight
-	newWeight = d.weights[path].Value + weight
+	newWeight = d.Weights[path].Value + weight
 	if newWeight <= 0 {
 		// if the weight is negative or zero, delete it
 		d.Remove(path)
 		return
 	}
-	d.weights[path] = NewWeight(newWeight)
+	d.Weights[path] = NewWeight(newWeight)
 }
 
 // Remove removes a path from the database.
 func (d *GobDatabase) Remove(path string) {
 	d.dirty = true
-	delete(d.weights, path)
+	delete(d.Weights, path)
 }
 
 // Dump prints the database to the specified writer.
-func (d *GobDatabase) Dump(w io.Writer) error {
-	entries := toEntryList(d.weights)
-	sort.Sort(descendingWeight(entries))
-	for _, entry := range entries {
-		t := entry.UpdatedAt.Round(time.Second).Format("2006-01-02 15:04 MST")
-		if _, err := fmt.Fprintf(w, "%-12.6f %-25s %s\n", entry.Weight, t, entry.Path); err != nil {
-			return err
-		}
-	}
-	return nil
-}
 
 // Prune removes entries from the database that no longer exist.
 func (d *GobDatabase) Prune(maxEntries int) {
 	// delete non-existent entries
-	for path := range d.weights {
+	for path := range d.Weights {
 		st, err := os.Stat(path)
 		if err != nil {
 			log.Debug().Err(err).Msg("failed to stat file")
-			delete(d.weights, path)
+			delete(d.Weights, path)
 			d.dirty = true
 			continue
 		}
 		if !st.IsDir() {
 			log.Debug().Msg("removing non-directory entry")
-			delete(d.weights, path)
+			delete(d.Weights, path)
 			d.dirty = true
 		}
 	}
@@ -109,12 +94,12 @@ func (d *GobDatabase) Prune(maxEntries int) {
 	if maxEntries <= 0 {
 		return // ignore zero/negative value
 	}
-	deleteCount := len(d.weights) - maxEntries
+	deleteCount := len(d.Weights) - maxEntries
 	if deleteCount > 0 {
-		entries := toEntryList(d.weights)
+		entries := toEntryList(d.Weights)
 		sort.Sort(ascendingWeight(entries))
 		for i, entry := range entries {
-			delete(d.weights, entry.Path)
+			delete(d.Weights, entry.Path)
 			if i == deleteCount-1 {
 				break
 			}
@@ -126,7 +111,7 @@ func (d *GobDatabase) Prune(maxEntries int) {
 // SumWeights computes the sum of weights in the database.
 func (d *GobDatabase) SumWeights() float64 {
 	var sum float64
-	for _, weight := range d.weights {
+	for _, weight := range d.Weights {
 		sum += weight.Value
 	}
 	return sum
@@ -165,7 +150,7 @@ func (d *GobDatabase) Save() error {
 	// encode and flush the file
 	w := bufio.NewWriter(temp)
 	enc := gob.NewEncoder(w)
-	if err := enc.Encode(d.weights); err != nil {
+	if err := enc.Encode(d.Weights); err != nil {
 		log.Error().Err(err).Msg("failed to gob encode database")
 		return err
 	}
@@ -186,7 +171,7 @@ func (d *GobDatabase) Save() error {
 
 // Search searches for the best database entry.
 func (d *GobDatabase) Search(needle string) Entry {
-	s := NewSearcher(d.weights, d.opts)
+	s := NewSearcher(d.Weights, d.opts)
 
 	// first check exact suffix matches
 	exact := needle
@@ -215,8 +200,20 @@ func (d *GobDatabase) Search(needle string) Entry {
 	return best
 }
 
+// Dump prints the database to the specified writer.
+func (d *GobDatabase) Dump(w io.Writer) error {
+	output := dumpOutput{
+		Format:  "gob",
+		Weights: toEntryList(d.Weights),
+	}
+	sort.Sort(descendingWeight(output.Weights))
+	enc := json.NewEncoder(w)
+	enc.SetIndent("", "  ")
+	return enc.Encode(output)
+}
+
 func (d *GobDatabase) Replace(weights WeightMap) {
-	d.weights = weights
+	d.Weights = weights
 	d.dirty = true
 }
 
@@ -225,7 +222,7 @@ func NewGobDatabase(path string, opts Options) *GobDatabase {
 	db := &GobDatabase{
 		path:    path,
 		opts:    opts,
-		weights: make(WeightMap),
+		Weights: make(WeightMap),
 	}
 	dbFile, err := os.Open(path)
 	if err != nil {
@@ -244,8 +241,13 @@ func NewGobDatabase(path string, opts Options) *GobDatabase {
 	}()
 
 	dec := gob.NewDecoder(dbFile)
-	if err := dec.Decode(&db.weights); err != nil {
+	if err := dec.Decode(&db.Weights); err != nil {
 		log.Error().Err(err).Str("path", path).Msg("failed to decode database file")
 	}
 	return db
+}
+
+type dumpOutput struct {
+	Format  string  `json:"format"`
+	Weights []Entry `json:"weights"`
 }

@@ -20,9 +20,9 @@ import "time"
 
 // Entry represents a database entry.
 type Entry struct {
-	Path      string
-	Weight    float64
-	UpdatedAt time.Time
+	Path      string    `json:"path"`
+	Weight    float64   `json:"weight"`
+	UpdatedAt time.Time `json:"time,string"`
 }
 
 type descendingWeight []Entry
