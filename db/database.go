@@ -38,23 +38,27 @@ type Database struct {
 	Weights map[string]float64 // map of entry to weight
 }
 
-// AdjustWeight adjusts the weight of a path.
-func (d *Database) AdjustWeight(path string, weight float64) {
+// AdjustWeight adjusts the weight of a path. The adjusted weight value is
+// returned.
+func (d *Database) AdjustWeight(path string, weight float64) float64 {
+	var newWeight float64
 	if weight >= 0 {
 		// increase the weight
 		current := d.Weights[path]
-		d.Weights[path] = math.Sqrt(current*current + weight*weight)
-		return
+		newWeight = math.Sqrt(current*current + weight*weight)
+		d.Weights[path] = newWeight
+		return newWeight
 	}
 
 	// decrease the weight
-	newWeight := d.Weights[path] + weight
+	newWeight = d.Weights[path] + weight
 	if newWeight <= 0 {
 		// if the weight is negative or zero, delete it
 		d.Remove(path)
-		return
+		return 0
 	}
 	d.Weights[path] = newWeight
+	return newWeight
 }
 
 // Remove removes a path from the database.
@@ -79,20 +83,16 @@ func (d *Database) Dump(w io.Writer) error {
 
 // Prune removes entries from the database that no longer exist.
 func (d *Database) Prune() {
-	var removePaths []string
 	for path := range d.Weights {
 		st, err := os.Stat(path)
 		if err != nil {
 			log.Debug().Err(err).Msg("failed to stat file")
-			removePaths = append(removePaths, path)
+			delete(d.Weights, path)
 		}
 		if !st.IsDir() {
 			log.Debug().Msg("removing non-directory entry")
-			removePaths = append(removePaths, path)
+			delete(d.Weights, path)
 		}
-	}
-	for _, path := range removePaths {
-		delete(d.Weights, path)
 	}
 }
 
