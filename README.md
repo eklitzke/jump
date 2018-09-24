@@ -1,4 +1,4 @@
-[![CircleCI](https://circleci.com/gh/eklitzke/jump/tree/master.svg?style=svg)](https://circleci.com/gh/eklitzke/jump/tree/master)
+[![CircleCI](https://circleci.com/gh/eklitzke/jump/tree/master.svg?style=shield)](https://circleci.com/gh/eklitzke/jump/tree/master)
 
 This project implements a simple shell command jumper similar to
 [autojump](https://github.com/wting/autojump) or
