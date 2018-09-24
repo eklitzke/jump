@@ -69,8 +69,6 @@ func (d *GobDatabase) Remove(path string) {
 	delete(d.Weights, path)
 }
 
-// Dump prints the database to the specified writer.
-
 // Prune removes entries from the database that no longer exist.
 func (d *GobDatabase) Prune(maxEntries int) {
 	// delete non-existent entries
@@ -108,15 +106,6 @@ func (d *GobDatabase) Prune(maxEntries int) {
 	}
 }
 
-// SumWeights computes the sum of weights in the database.
-func (d *GobDatabase) SumWeights() float64 {
-	var sum float64
-	for _, weight := range d.Weights {
-		sum += weight.Value
-	}
-	return sum
-}
-
 // Save atomically saves the database.
 func (d *GobDatabase) Save(w io.Writer) error {
 	enc := gob.NewEncoder(w)
@@ -140,8 +129,6 @@ func (d *GobDatabase) Search(needle string) Entry {
 	// next try any contains matches
 	s.Search(needle, strings.Contains, 1.)
 
-	// TODO: implement time relevance as well.
-
 	// find the best match
 	best, errorPaths := s.Best()
 
@@ -156,7 +143,10 @@ func (d *GobDatabase) Search(needle string) Entry {
 
 // Dump prints the database to the specified writer.
 func (d *GobDatabase) Dump(w io.Writer) error {
-	output := dumpOutput{
+	output := struct {
+		Format  string  `json:"format"`
+		Weights []Entry `json:"weights"`
+	}{
 		Format:  "gob",
 		Weights: toEntryList(d.Weights),
 	}
@@ -183,9 +173,4 @@ func NewGobDatabase(r io.Reader, opts Options) *GobDatabase {
 		log.Error().Err(err).Msg("failed to decode weights for gob database")
 	}
 	return db
-}
-
-type dumpOutput struct {
-	Format  string  `json:"format"`
-	Weights []Entry `json:"weights"`
 }

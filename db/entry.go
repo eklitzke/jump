@@ -27,15 +27,15 @@ type Entry struct {
 
 type descendingWeight []Entry
 
-func (b descendingWeight) Len() int           { return len(b) }
-func (b descendingWeight) Swap(i, j int)      { b[i], b[j] = b[j], b[i] }
-func (b descendingWeight) Less(i, j int) bool { return b[i].Weight > b[j].Weight }
+func (d descendingWeight) Len() int           { return len(d) }
+func (d descendingWeight) Swap(i, j int)      { d[i], d[j] = d[j], d[i] }
+func (d descendingWeight) Less(i, j int) bool { return d[i].Weight > d[j].Weight }
 
 type ascendingWeight []Entry
 
-func (b ascendingWeight) Len() int           { return len(b) }
-func (b ascendingWeight) Swap(i, j int)      { b[i], b[j] = b[j], b[i] }
-func (b ascendingWeight) Less(i, j int) bool { return b[i].Weight > b[j].Weight }
+func (a ascendingWeight) Len() int           { return len(a) }
+func (a ascendingWeight) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a ascendingWeight) Less(i, j int) bool { return a[i].Weight > a[j].Weight }
 
 func toEntryList(w WeightMap) []Entry {
 	var entries []Entry
