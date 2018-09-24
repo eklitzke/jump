@@ -38,9 +38,9 @@ creating a new terminal window) and check that you see output something like
 this:
 
 ```bash
-# Check that j is aliased to the jump.sh provided jump_jump function.
+# Check that j is aliased to the jump.sh provided _jump_jump function.
 $ type j
-j is aliased to `jump_jump'
+j is aliased to `_jump_jump'
 ```
 
 ## Usage
@@ -49,7 +49,35 @@ Use the `j` command to jump places. For example, if you run a lot of commands in
 a directory named `~/foo/bar`, running the shell command `j bar` should jump to
 the `~/foo/bar` directory.
 
-For more advanced commands run `jump help`.
+For more advanced commands run `jump help`:
+
+```plain
+$ jump help
+Jump is a shell autojumper
+
+Usage:
+  jump [command]
+
+Available Commands:
+  dump        Dump database contents as plaintext
+  help        Help about any command
+  import      Import an autojump database
+  prune       Automatically prune old or invalid database entries
+  remove      Remove a database entry
+  search      Search the database for matches
+  update      Update database weights
+
+Flags:
+  -c, --config string      config file (default "/home/evan/.config/jump/jump.yml")
+  -D, --database string    database file (default "/home/evan/.local/share/jump/db.gob")
+  -d, --debug              enable debug mode
+  -h, --help               help for jump
+      --log-caller         include caller info in log messages
+  -l, --log-level string   the log level (default "info")
+      --time-matching      enable time matching in searches (default true)
+
+Use "jump [command] --help" for more information about a command.
+```
 
 ### Issues With `PROMPT_COMMAND`
 

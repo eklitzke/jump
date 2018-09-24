@@ -21,7 +21,7 @@ _print_red() {
 }
 
 # Try to jump to the best matching entry in the jump database.
-jump_jump() {
+_jump_jump() {
   local dest
   dest="$(jump search "$1")"
   if [[ -n "$dest" ]] ; then
@@ -32,12 +32,12 @@ jump_jump() {
   fi
 }
 
-# If the jump command is available, alias j=jump_jump and add "jump update" to
+# If the jump command is available, alias j=_jump_jump and add "jump update" to
 # the PROMPT_COMMAND.
 if command -v jump &>/dev/null; then
   if [[ "x${_JUMP_ENABLED}" = x ]]; then
     PROMPT_COMMAND="${PROMPT_COMMAND};jump update"
     _JUMP_ENABLED=yes
   fi
-  alias j=jump_jump
+  alias j=_jump_jump
 fi
