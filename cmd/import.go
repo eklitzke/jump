@@ -17,6 +17,8 @@
 package cmd
 
 import (
+	"os"
+
 	"github.com/eklitzke/jump/db"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
@@ -27,9 +29,22 @@ var importCmd = &cobra.Command{
 	Use:   "import",
 	Short: "Import an autojump database",
 	Run: func(cmd *cobra.Command, args []string) {
-		newWeights, err := db.LoadAutojumpDatabase()
+		path := db.FindAutojumpDatabase()
+		if path == "" {
+			log.Fatal().Msg("unable to find autojump database")
+		}
+		f, err := os.Open(path)
 		if err != nil {
-			log.Fatal().Err(err).Msg("failed to load autojump database")
+			log.Fatal().Err(err).Str("path", path).Msg("failed to open autojump database")
+		}
+		defer func() {
+			if err := f.Close(); err != nil {
+				log.Error().Err(err).Str("path", path).Msg("failed to close autojump database")
+			}
+		}()
+		newWeights, err := db.LoadAutojumpDatabase(f)
+		if err != nil {
+			log.Fatal().Err(err).Msg("failed to import autojump database")
 		}
 		handle.Replace(newWeights)
 	},

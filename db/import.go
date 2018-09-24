@@ -18,8 +18,7 @@ package db
 
 import (
 	"bufio"
-	"errors"
-	"os"
+	"io"
 	"strconv"
 	"strings"
 
@@ -31,47 +30,34 @@ const (
 	autojumpDbFile = "autojump.txt"
 )
 
-var errNoAutojumpDatabase = errors.New("failed to find autojump database")
+func FindAutojumpDatabase() string {
+	x := newXDG(autojumpVendor)
+	return x.QueryData(autojumpDbFile)
+}
 
 // LoadAutojumpDatabase loads the autojump database file
-func LoadAutojumpDatabase() (map[string]Weight, error) {
-	x := newXDG(autojumpVendor)
-	dbPath := x.QueryData(autojumpDbFile)
-	if dbPath == "" {
-		return nil, errNoAutojumpDatabase
-	}
-	f, err := os.Open(dbPath)
-	if err != nil {
-		log.Error().Err(err).Str("path", dbPath).Msg("failed to open autojump database")
-		return nil, err
-	}
-	defer func() {
-		if err := f.Close(); err != nil {
-			log.Error().Err(err).Str("path", dbPath).Msg("failed to close autojump database")
-		}
-	}()
-
+func LoadAutojumpDatabase(r io.Reader) (map[string]Weight, error) {
 	weights := make(map[string]Weight)
-	scanner := bufio.NewScanner(f)
+	scanner := bufio.NewScanner(r)
 	for scanner.Scan() {
 		line := scanner.Text()
 		sep := strings.IndexAny(line, " \t")
 		if sep == -1 {
-			log.Warn().Str("path", dbPath).Str("line", line).Msg("failed to split line")
+			log.Warn().Str("line", line).Msg("failed to split line")
 			continue
 		}
 
 		stringWeight := line[:sep]
 		weight, err := strconv.ParseFloat(stringWeight, 64)
 		if err != nil {
-			log.Warn().Str("path", dbPath).Str("line", line).Msg("failed to parse weight as float64")
+			log.Warn().Str("line", line).Msg("failed to parse weight as float64")
 			continue
 		}
 		path := strings.TrimSpace(line[sep:])
 		weights[path] = NewWeight(weight)
 	}
 	if err := scanner.Err(); err != nil {
-		log.Error().Err(err).Str("path", dbPath).Msg("error scanning file")
+		log.Error().Err(err).Msg("error scanning file")
 		return nil, err
 	}
 	return weights, nil

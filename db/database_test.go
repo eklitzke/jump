@@ -102,4 +102,9 @@ func (s *MySuite) TestDatabaseEndToEnd(c *C) {
 	c.Assert(handle.Weights, HasLen, 3)
 }
 
+func (s *MySuite) TestLoadDatabase(c *C) {
+	handle := db.NewDatabase(strings.NewReader(""), db.Options{})
+	c.Assert(handle, Not(Equals), nil)
+}
+
 var _ = Suite(&MySuite{})
