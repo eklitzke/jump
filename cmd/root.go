@@ -29,6 +29,8 @@ import (
 
 var cfgFile string
 var dbPath string
+var debug bool
+var timeMatching bool
 var logCaller bool
 var logLevel string
 var handle *db.Database
@@ -65,8 +67,10 @@ func init() {
 	cobra.OnInitialize(initDBHandle)
 
 	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", db.ConfigPath(), "config file")
-	rootCmd.PersistentFlags().StringVarP(&dbPath, "database", "d", db.DatabasePath(), "database file")
+	rootCmd.PersistentFlags().StringVarP(&dbPath, "database", "D", db.DatabasePath(), "database file")
+	rootCmd.PersistentFlags().BoolVarP(&debug, "debug", "d", false, "enable debug mode")
 	rootCmd.PersistentFlags().BoolVar(&logCaller, "log-caller", false, "include caller info in log messages")
+	rootCmd.PersistentFlags().BoolVar(&timeMatching, "time-matching", true, "Enable time matching")
 	rootCmd.PersistentFlags().StringVarP(&logLevel, "log-level", "l", "info", "the log level")
 }
 
@@ -95,11 +99,17 @@ func initLogging() {
 	if err != nil {
 		level = zerolog.InfoLevel
 	}
+	if debug {
+		level = zerolog.DebugLevel
+	}
 	zerolog.SetGlobalLevel(level)
 	log.Debug().Str("level", level.String()).Msg("logging initialized")
 
 }
 
 func initDBHandle() {
-	handle = db.LoadDatabase(dbPath)
+	handle = db.LoadDatabase(dbPath, db.Options{
+		Debug:        debug,
+		TimeMatching: timeMatching,
+	})
 }

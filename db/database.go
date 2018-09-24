@@ -32,12 +32,11 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-type WeightMap map[string]Weight
-
 // Database represents the database.
 type Database struct {
 	dirty   bool      // dirty bit
 	path    string    // path to the underlying file
+	opts    Options   // database options
 	Weights WeightMap // map of entry to weight
 }
 
@@ -182,8 +181,8 @@ func (d *Database) Save() error {
 }
 
 // Search searches for the best database entry.
-func (d *Database) Search(needle string, timeMatching bool) Entry {
-	s := NewSearcher(d.Weights, timeMatching)
+func (d *Database) Search(needle string) Entry {
+	s := NewSearcher(d.Weights, d.opts)
 
 	// first check exact suffix matches
 	exact := needle
@@ -213,8 +212,12 @@ func (d *Database) Search(needle string, timeMatching bool) Entry {
 }
 
 // LoadDatabase loads a database file.
-func LoadDatabase(path string) *Database {
-	db := &Database{path: path, Weights: make(WeightMap)}
+func LoadDatabase(path string, opts Options) *Database {
+	db := &Database{
+		path:    path,
+		opts:    opts,
+		Weights: make(WeightMap),
+	}
 	dbFile, err := os.Open(path)
 	if err != nil {
 		if os.IsNotExist(err) {

@@ -17,9 +17,7 @@
 package db
 
 import (
-	"errors"
 	"math"
-	"os"
 	"sort"
 	"time"
 
@@ -31,14 +29,15 @@ type StringCompare func(string, string) bool
 
 // Searcher implements the matching algorithm.
 type Searcher struct {
-	input        WeightMap // read-only input weights
-	output       WeightMap // output weights
-	timeMatching bool      // should time matching be enabled?
+	input  WeightMap // read-only input weights
+	output WeightMap // output weights
+	opts   Options   // options
 }
 
 // Search searches for the needle in the input list using the given comparator,
 // and modulates the weight by alpha.
 func (s *Searcher) Search(needle string, cmp StringCompare, alpha float64) {
+	log.Debug().Str("needle", needle).Float64("alpha", alpha).Msg("doing search")
 	for path, inputWeight := range s.input {
 		if cmp(path, needle) {
 			if w, ok := s.output[path]; ok {
@@ -46,13 +45,13 @@ func (s *Searcher) Search(needle string, cmp StringCompare, alpha float64) {
 				s.output[path] = w
 			} else {
 				beta := alpha
-				if s.timeMatching {
+				if s.opts.TimeMatching {
 					elapsed := time.Since(inputWeight.UpdatedAt).Seconds()
 					if elapsed > 0 {
-						beta /= math.Log(elapsed)
+						beta /= math.Log1p(elapsed)
 					}
 				}
-				log.Debug().Float64("alpha", alpha).Float64("beta", beta).Str("path", path).Msg("found search candidate")
+				log.Debug().Float64("alpha", alpha).Float64("beta", beta).Str("path", path).Float64("initial_weight", inputWeight.Value).Msg("new search candidate")
 				inputWeight.Value *= beta
 				s.output[path] = inputWeight
 			}
@@ -65,6 +64,11 @@ func (s *Searcher) Best() (Entry, []string) {
 	var errorPaths []string
 	entries := toEntryList(s.output)
 	sort.Sort(descendingWeight(entries))
+	if s.opts.Debug {
+		for rank, entry := range entries {
+			log.Debug().Int("rank", rank).Float64("score", entry.Weight).Str("path", entry.Path).Msg("final search candidate")
+		}
+	}
 	for _, entry := range entries {
 		if err := CheckIsDir(entry.Path); err != nil {
 			errorPaths = append(errorPaths, entry.Path)
@@ -77,27 +81,10 @@ func (s *Searcher) Best() (Entry, []string) {
 }
 
 // NewSearcher creates a new searcher instance.
-func NewSearcher(input WeightMap, timeMatching bool) *Searcher {
+func NewSearcher(input WeightMap, opts Options) *Searcher {
 	return &Searcher{
-		input:        input,
-		output:       make(WeightMap),
-		timeMatching: timeMatching,
+		input:  input,
+		output: make(WeightMap),
+		opts:   opts,
 	}
-}
-
-// ErrNotDir is returned by CheckIsDir when the path is not a directory.
-var ErrNotDir = errors.New("path is not a directory")
-
-// CheckIsDir checks that the input path is a directory.
-func CheckIsDir(path string) error {
-	st, err := os.Stat(path)
-	if err != nil {
-		log.Warn().Err(err).Str("path", path).Msg("failed to stat path")
-		return err
-	}
-	if !st.IsDir() {
-		log.Warn().Str("path", path).Msg("specified file is not a directory")
-		return ErrNotDir
-	}
-	return nil
 }

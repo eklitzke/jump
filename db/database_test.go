@@ -49,7 +49,7 @@ func (s *MySuite) TestDatabaseEndToEnd(c *C) {
 	foo := filepath.Join(baseDir, "foo")
 	os.MkdirAll(foo, 0755)
 
-	handle := db.LoadDatabase(f.Name())
+	handle := db.LoadDatabase(f.Name(), db.Options{})
 
 	handle.AdjustWeight(foo, 1)
 	w := handle.Weights[foo]
@@ -58,14 +58,14 @@ func (s *MySuite) TestDatabaseEndToEnd(c *C) {
 	c.Assert(handle.Save(), IsNil)
 	c.Assert(handle.Save(), IsNil)
 
-	handle = db.LoadDatabase(f.Name())
+	handle = db.LoadDatabase(f.Name(), db.Options{TimeMatching: true})
 	c.Assert(handle.Weights, HasLen, 1)
 	c.Assert(w == handle.Weights[foo], Equals, true)
 
-	entry := handle.Search("nomatch", true)
+	entry := handle.Search("nomatch")
 	c.Assert(entry, Equals, db.Entry{})
 	for _, query := range []string{"f", "foo", "oo"} {
-		entry = handle.Search(query, false)
+		entry = handle.Search(query)
 		c.Assert(entry.Path, Equals, foo)
 	}
 

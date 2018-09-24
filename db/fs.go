@@ -16,21 +16,26 @@
 
 package db
 
-import "time"
+import (
+	"errors"
+	"os"
 
-// Weight represents a weight value with a timestamp.
-type Weight struct {
-	Value     float64
-	UpdatedAt time.Time
-}
+	"github.com/rs/zerolog/log"
+)
 
-// NewWeight creates a new weight value with the current timestamp.
-func NewWeight(val float64) Weight {
-	return Weight{
-		Value:     val,
-		UpdatedAt: time.Now().UTC(),
+// ErrNotDir is returned by CheckIsDir when the path is not a directory.
+var ErrNotDir = errors.New("path is not a directory")
+
+// CheckIsDir checks that the input path is a directory.
+func CheckIsDir(path string) error {
+	st, err := os.Stat(path)
+	if err != nil {
+		log.Warn().Err(err).Str("path", path).Msg("failed to stat path")
+		return err
 	}
+	if !st.IsDir() {
+		log.Warn().Str("path", path).Msg("specified file is not a directory")
+		return ErrNotDir
+	}
+	return nil
 }
-
-// WeightMap is a map from string paths to weights.
-type WeightMap map[string]Weight
