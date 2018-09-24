@@ -1,6 +1,7 @@
 package db_test
 
 import (
+	"bytes"
 	"io/ioutil"
 	"os"
 	"testing"
@@ -32,6 +33,36 @@ func (s *MySuite) TestDatabaseEndToEnd(c *C) {
 	c.Assert(handle.Save(), IsNil)
 
 	handle = db.LoadDatabase(f.Name())
-	c.Assert(1, Equals, len(handle.Weights))
+	c.Assert(handle.Weights, HasLen, 1)
 	c.Assert(w == handle.Weights["foo"], Equals, true)
+
+	entry := handle.Search("nomatch")
+	c.Assert(entry, Equals, db.Entry{})
+	for _, query := range []string{"f", "foo", "oo"} {
+		entry = handle.Search(query)
+		c.Assert(entry.Path, Equals, "foo")
+	}
+
+	// remove the non-existent directory
+	handle.Prune(100)
+	c.Assert(handle.Weights, HasLen, 0)
+
+	// add one that does exist
+	handle.AdjustWeight("/tmp", 1)
+	handle.Prune(100)
+	c.Assert(handle.Weights, HasLen, 1)
+
+	// force remove it
+	handle.Remove("/tmp")
+	c.Assert(handle.Weights, HasLen, 0)
+	c.Assert(handle.SumWeights(), Equals, 0.)
+
+	buf := bytes.Buffer{}
+	c.Assert(handle.Dump(&buf), IsNil)
+	c.Assert(buf.String(), Equals, "")
+}
+
+func (s *MySuite) TestConfig(c *C) {
+	c.Assert(db.DatabasePath(), Not(Equals), "")
+	c.Assert(db.ConfigPath(), Not(Equals), "")
 }
