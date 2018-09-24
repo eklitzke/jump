@@ -17,15 +17,11 @@
 package db
 
 import (
-	"bufio"
 	"encoding/gob"
 	"encoding/json"
-	"fmt"
 	"io"
-	"io/ioutil"
 	"math"
 	"os"
-	"path/filepath"
 	"sort"
 	"strings"
 
@@ -35,7 +31,6 @@ import (
 // GobDatabase represents the database.
 type GobDatabase struct {
 	dirty   bool      // dirty bit
-	path    string    // path to the underlying file
 	opts    Options   // database options
 	Weights WeightMap // map of entry to weight
 }
@@ -61,6 +56,11 @@ func (d *GobDatabase) AdjustWeight(path string, weight float64) {
 		return
 	}
 	d.Weights[path] = NewWeight(newWeight)
+}
+
+// Dirty checks the dirty bit.
+func (d *GobDatabase) Dirty() bool {
+	return d.dirty
 }
 
 // Remove removes a path from the database.
@@ -118,55 +118,9 @@ func (d *GobDatabase) SumWeights() float64 {
 }
 
 // Save atomically saves the database.
-func (d *GobDatabase) Save() error {
-	if !d.dirty {
-		log.Debug().Msg("database not dirty, skipping save")
-		return nil
-	}
-
-	// ensure the directory exists
-	dir := filepath.Dir(d.path)
-	ensureDirectory(dir)
-
-	// create the temporary file in the same directory as the destination
-	// file, to ensure that the rename operation is atomic
-	temp, err := ioutil.TempFile(dir, fmt.Sprintf(".%s-", dbName))
-	if err != nil {
-		log.Error().Err(err).Str("dir", dir).Msg("failed to create temporary save file")
-		return err
-	}
-
-	// clean up the temporary file when we're done with it
-	tempName := temp.Name()
-	defer func() {
-		if err := temp.Close(); err != nil {
-			log.Error().Err(err).Str("path", tempName).Msg("error closing temporary file")
-		}
-		if err := os.Remove(tempName); err != nil && !os.IsNotExist(err) {
-			log.Error().Err(err).Str("path", tempName).Msg("failed to close temporary file")
-		}
-	}()
-
-	// encode and flush the file
-	w := bufio.NewWriter(temp)
+func (d *GobDatabase) Save(w io.Writer) error {
 	enc := gob.NewEncoder(w)
-	if err := enc.Encode(d.Weights); err != nil {
-		log.Error().Err(err).Msg("failed to gob encode database")
-		return err
-	}
-	if err := w.Flush(); err != nil {
-		log.Error().Err(err).Msg("failed to flush temporary file")
-		return err
-	}
-
-	// atomic rename
-	if err := os.Rename(tempName, d.path); err != nil {
-		log.Error().Err(err).Str("dbpath", d.path).Str("tempfile", tempName).Msg("failed to rename db file")
-		return err
-	}
-
-	d.dirty = false
-	return nil
+	return enc.Encode(d.Weights)
 }
 
 // Search searches for the best database entry.
@@ -212,37 +166,21 @@ func (d *GobDatabase) Dump(w io.Writer) error {
 	return enc.Encode(output)
 }
 
+// Replace replaces the underlying weight map.
 func (d *GobDatabase) Replace(weights WeightMap) {
 	d.Weights = weights
 	d.dirty = true
 }
 
 // NewGobDatabase loads a database file.
-func NewGobDatabase(path string, opts Options) *GobDatabase {
+func NewGobDatabase(r io.Reader, opts Options) *GobDatabase {
 	db := &GobDatabase{
-		path:    path,
 		opts:    opts,
 		Weights: make(WeightMap),
 	}
-	dbFile, err := os.Open(path)
-	if err != nil {
-		if os.IsNotExist(err) {
-			log.Debug().Err(err).Str("path", path).Msg("database file not found")
-		} else {
-			// a more serious error
-			log.Error().Err(err).Str("path", path).Msg("failed to open database file")
-		}
-		return db
-	}
-	defer func() {
-		if err := dbFile.Close(); err != nil {
-			log.Warn().Err(err).Str("path", path).Msg("failed to close db file")
-		}
-	}()
-
-	dec := gob.NewDecoder(dbFile)
+	dec := gob.NewDecoder(r)
 	if err := dec.Decode(&db.Weights); err != nil {
-		log.Error().Err(err).Str("path", path).Msg("failed to decode database file")
+		log.Error().Err(err).Msg("failed to decode weights for gob database")
 	}
 	return db
 }

@@ -17,7 +17,12 @@
 package cmd
 
 import (
+	"bufio"
+	"io"
+	"io/ioutil"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/eklitzke/jump/db"
 	isatty "github.com/mattn/go-isatty"
@@ -55,7 +60,7 @@ func Execute() {
 	// Save the database; this is a no-op if the database hasn't been
 	// mutated.
 	if handle != nil {
-		if err := handle.Save(); err != nil {
+		if err := saveDB(); err != nil {
 			log.Fatal().Err(err).Msg("failed to save database")
 		}
 	}
@@ -108,8 +113,90 @@ func initLogging() {
 }
 
 func initDBHandle() {
-	handle = db.NewDatabase(dbPath, db.Options{
+	var r io.Reader
+	dbFile, err := os.Open(dbPath)
+	if err != nil {
+		if !os.IsNotExist(err) {
+			// a serious error
+			log.Fatal().Err(err).Str("path", dbPath).Msg("failed to open database file")
+		}
+		// not so serious
+		log.Debug().Err(err).Str("path", dbPath).Msg("database file not found")
+		r = strings.NewReader("")
+	} else {
+		defer func() {
+			if err := dbFile.Close(); err != nil {
+				log.Warn().Err(err).Str("path", dbPath).Msg("failed to close db file")
+			}
+		}()
+		r = dbFile
+	}
+	handle = db.NewDatabase(r, db.Options{
 		Debug:        debug,
 		TimeMatching: timeMatching,
 	})
+}
+
+func saveDB() error {
+	if !handle.Dirty() {
+		log.Debug().Msg("database not dirty, skipping save")
+		return nil
+	}
+
+	// ensure the directory exists
+	dir := filepath.Dir(dbPath)
+	ensureDirectory(dir)
+
+	// create the temporary file in the same directory as the destination
+	// file, to ensure that the rename operation is atomic
+	temp, err := ioutil.TempFile(dir, ".jump.bak")
+	if err != nil {
+		log.Error().Err(err).Str("dir", dir).Msg("failed to create temporary save file")
+		return err
+	}
+
+	// clean up the temporary file when we're done with it
+	tempName := temp.Name()
+	defer func() {
+		if err := temp.Close(); err != nil {
+			log.Error().Err(err).Str("path", tempName).Msg("error closing temporary file")
+		}
+		if err := os.Remove(tempName); err != nil && !os.IsNotExist(err) {
+			log.Error().Err(err).Str("path", tempName).Msg("failed to close temporary file")
+		}
+	}()
+
+	// encode and flush the file
+	w := bufio.NewWriter(temp)
+	if err := handle.Save(w); err != nil {
+		log.Error().Err(err).Msg("failed to encode database")
+		return err
+	}
+	if err := w.Flush(); err != nil {
+		log.Error().Err(err).Msg("failed to flush temporary file")
+		return err
+	}
+
+	// atomic rename
+	if err := os.Rename(tempName, dbPath); err != nil {
+		log.Error().Err(err).Str("dbpath", dbPath).Str("tempfile", tempName).Msg("failed to rename db file")
+		return err
+	}
+
+	return nil
+}
+
+// ensureDirectory ensures that a directory exists
+func ensureDirectory(dir string) {
+	_, err := os.Stat(dir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			// create the data directory
+			if err := os.Mkdir(dir, 0700); err != nil {
+				log.Fatal().Err(err).Str("dir", dir).Msg("failed to create directory")
+			}
+		} else {
+			log.Fatal().Err(err).Str("dir", dir).Msg("failed to stat directory")
+		}
+	}
 }

@@ -22,6 +22,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/eklitzke/jump/db"
@@ -36,29 +37,24 @@ type MySuite struct{}
 var _ = Suite(&MySuite{})
 
 func (s *MySuite) TestDatabaseEndToEnd(c *C) {
-	// TODO: refactor this to not require a temporary file
-	f, err := ioutil.TempFile("", "test.db-")
+	baseDir, err := ioutil.TempDir("", "jump-test-")
 	c.Assert(err, IsNil)
-	c.Assert(f.Close(), IsNil)
-
-	defer os.Remove(f.Name())
-
-	baseDir := filepath.Join(os.TempDir(), "jump-test")
+	c.Assert(baseDir, Not(Equals), "")
 	defer os.RemoveAll(baseDir)
 
 	foo := filepath.Join(baseDir, "foo")
-	os.MkdirAll(foo, 0755)
+	c.Assert(os.MkdirAll(foo, 0755), IsNil)
 
-	handle := db.NewGobDatabase(f.Name(), db.Options{})
+	handle := db.NewGobDatabase(strings.NewReader(""), db.Options{})
 
 	handle.AdjustWeight(foo, 1)
 	w := handle.Weights[foo]
 	c.Assert(w.Value > 0, Equals, true)
 	c.Assert(handle.Weights, HasLen, 1)
-	c.Assert(handle.Save(), IsNil)
-	c.Assert(handle.Save(), IsNil)
+	buf := new(bytes.Buffer)
+	c.Assert(handle.Save(buf), IsNil)
 
-	handle = db.NewGobDatabase(f.Name(), db.Options{TimeMatching: true})
+	handle = db.NewGobDatabase(buf, db.Options{TimeMatching: true})
 	c.Assert(handle.Weights, HasLen, 1)
 	c.Assert(w == handle.Weights[foo], Equals, true)
 
@@ -73,8 +69,8 @@ func (s *MySuite) TestDatabaseEndToEnd(c *C) {
 	handle.Prune(100)
 	c.Assert(handle.Weights, HasLen, 1)
 
-	buf := bytes.Buffer{}
-	c.Assert(handle.Dump(&buf), IsNil)
+	buf = new(bytes.Buffer)
+	c.Assert(handle.Dump(buf), IsNil)
 	c.Assert(buf.String(), Not(Equals), "")
 
 	handle.AdjustWeight(foo, -0.5)
@@ -88,11 +84,10 @@ func (s *MySuite) TestDatabaseEndToEnd(c *C) {
 		handle.AdjustWeight(dirName, 1)
 	}
 
-	nonDir := filepath.Join(os.TempDir(), "foo.txt")
+	nonDir := filepath.Join(baseDir, "foo.txt")
 	g, err := os.Create(nonDir)
 	c.Assert(err, IsNil)
 	c.Assert(g.Close(), IsNil)
-	defer os.Remove(nonDir)
 	handle.AdjustWeight(nonDir, 1)
 
 	handle.Prune(3)

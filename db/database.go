@@ -21,15 +21,16 @@ import "io"
 // Database represents the database.
 type Database interface {
 	AdjustWeight(path string, weight float64)
+	Dirty() bool
 	Dump(io.Writer) error
 	Remove(path string)
 	Replace(WeightMap)
 	Prune(int)
-	Save() error
+	Save(io.Writer) error
 	Search(needle string) Entry
 }
 
 // NewDatabase loads a database file.
-func NewDatabase(path string, opts Options) Database {
-	return NewGobDatabase(path, opts)
+func NewDatabase(r io.Reader, opts Options) Database {
+	return NewGobDatabase(r, opts)
 }
