@@ -1,4 +1,5 @@
 [![CircleCI](https://circleci.com/gh/eklitzke/jump/tree/master.svg?style=shield)](https://circleci.com/gh/eklitzke/jump/tree/master)
+[![Documentation](https://godoc.org/github.com/eklitzke/jump/db?status.svg)](http://godoc.org/github.com/eklitzke/jump/db)
 [![codecov](https://codecov.io/gh/eklitzke/jump/branch/master/graph/badge.svg)](https://codecov.io/gh/eklitzke/jump)
 
 This project implements a simple shell command jumper similar to
