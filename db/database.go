@@ -19,7 +19,6 @@ package db
 import (
 	"bufio"
 	"encoding/gob"
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -33,11 +32,13 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+type WeightMap map[string]Weight
+
 // Database represents the database.
 type Database struct {
-	dirty   bool              // dirty bit
-	path    string            // path to the underlying file
-	Weights map[string]Weight // map of entry to weight
+	dirty   bool      // dirty bit
+	path    string    // path to the underlying file
+	Weights WeightMap // map of entry to weight
 }
 
 // AdjustWeight adjusts the weight of a path. The adjusted weight value is
@@ -69,22 +70,9 @@ func (d *Database) Remove(path string) {
 	delete(d.Weights, path)
 }
 
-// get an unsorted entry list
-func (d *Database) toEntryList() []Entry {
-	var entries []Entry
-	for path, weight := range d.Weights {
-		entries = append(entries, Entry{
-			Path:      path,
-			Weight:    weight.Value,
-			UpdatedAt: weight.UpdatedAt,
-		})
-	}
-	return entries
-}
-
 // Dump prints the database to the specified writer.
 func (d *Database) Dump(w io.Writer) error {
-	entries := d.toEntryList()
+	entries := toEntryList(d.Weights)
 	sort.Sort(descendingWeight(entries))
 	for _, entry := range entries {
 		t := entry.UpdatedAt.Round(time.Second).Format("2006-01-02 15:04 MST")
@@ -120,7 +108,7 @@ func (d *Database) Prune(maxEntries int) {
 	}
 	deleteCount := len(d.Weights) - maxEntries
 	if deleteCount > 0 {
-		entries := d.toEntryList()
+		entries := toEntryList(d.Weights)
 		sort.Sort(ascendingWeight(entries))
 		for i, entry := range entries {
 			delete(d.Weights, entry.Path)
@@ -193,42 +181,40 @@ func (d *Database) Save() error {
 	return nil
 }
 
-var errNotFound = errors.New("entry not found")
-
-type stringCompare func(string, string) bool
-
-func (d *Database) search(cmp stringCompare, needle string) (Entry, error) {
-	var candidates []Entry
-	for path, weight := range d.Weights {
-		if cmp(path, needle) {
-			candidates = append(candidates, Entry{Path: path, Weight: weight.Value})
-		}
-	}
-	if candidates == nil {
-		return Entry{}, errNotFound
-	}
-	return FindHighestWeight(candidates), nil
-}
-
 // Search searches for the best database entry.
 func (d *Database) Search(needle string) Entry {
+	s := NewSearcher(d.Weights)
+
 	// first check exact suffix matches
-	if entry, err := d.search(strings.HasSuffix, needle); err == nil {
-		return entry
+	exact := needle
+	if !strings.HasPrefix(exact, "/") {
+		exact = "/" + needle
+	}
+	s.Search(exact, strings.HasSuffix, 10.)
+
+	// next check regular suffix matches
+	s.Search(needle, strings.HasSuffix, 2.5)
+
+	// next try any contains matches
+	s.Search(needle, strings.Contains, 1.)
+
+	// TODO: implement time relevance as well.
+
+	// find the best match
+	best, errorPaths := s.Best()
+
+	// if any errors were encountered, remove those paths
+	for _, path := range errorPaths {
+		log.Warn().Str("path", path).Msg("removing bad path")
+		d.Remove(path)
 	}
 
-	// next try any contains
-	if entry, err := d.search(strings.Contains, needle); err == nil {
-		return entry
-	}
-
-	// return an empty entry by default
-	return Entry{}
+	return best
 }
 
 // LoadDatabase loads a database file.
 func LoadDatabase(path string) *Database {
-	db := &Database{path: path, Weights: make(map[string]Weight)}
+	db := &Database{path: path, Weights: make(WeightMap)}
 	dbFile, err := os.Open(path)
 	if err != nil {
 		if os.IsNotExist(err) {

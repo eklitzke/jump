@@ -19,6 +19,7 @@ package cmd
 import (
 	"os"
 
+	"github.com/eklitzke/jump/db"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 )
@@ -43,13 +44,7 @@ var updateCmd = &cobra.Command{
 
 		// try to update each argument, first checking that it exists and is a directory
 		for _, dir := range args {
-			st, err := os.Stat(dir)
-			if err != nil {
-				log.Warn().Err(err).Str("path", dir).Msg("failed to stat path")
-				continue
-			}
-			if !st.IsDir() {
-				log.Warn().Str("path", dir).Msg("specified file is not a directory")
+			if err := db.CheckIsDir(dir); err != nil {
 				continue
 			}
 			handle.AdjustWeight(dir, updateWeight)

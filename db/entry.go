@@ -47,3 +47,15 @@ func FindHighestWeight(entries []Entry) Entry {
 	}
 	return best
 }
+
+func toEntryList(w WeightMap) []Entry {
+	var entries []Entry
+	for path, weight := range w {
+		entries = append(entries, Entry{
+			Path:      path,
+			Weight:    weight.Value,
+			UpdatedAt: weight.UpdatedAt,
+		})
+	}
+	return entries
+}

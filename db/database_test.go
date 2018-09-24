@@ -1,3 +1,19 @@
+// Copyright 2019 Evan Klitzke <evan@eklitzke.org>
+//
+// This file is part of jump.
+//
+// jump is free software: you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free Software
+// Foundation, either version 3 of the License, or (at your option) any later
+// version.
+//
+// jump is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+// A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License along with
+// jump. If not, see <http://www.gnu.org/licenses/>.
+
 package db_test
 
 import (
@@ -27,9 +43,16 @@ func (s *MySuite) TestDatabaseEndToEnd(c *C) {
 
 	defer os.Remove(f.Name())
 
+	baseDir := filepath.Join(os.TempDir(), "jump-test")
+	defer os.RemoveAll(baseDir)
+
+	foo := filepath.Join(baseDir, "foo")
+	os.MkdirAll(foo, 0755)
+
 	handle := db.LoadDatabase(f.Name())
-	handle.AdjustWeight("foo", 1)
-	w := handle.Weights["foo"]
+
+	handle.AdjustWeight(foo, 1)
+	w := handle.Weights[foo]
 	c.Assert(w.Value > 0, Equals, true)
 	c.Assert(handle.Weights, HasLen, 1)
 	c.Assert(handle.Save(), IsNil)
@@ -37,44 +60,28 @@ func (s *MySuite) TestDatabaseEndToEnd(c *C) {
 
 	handle = db.LoadDatabase(f.Name())
 	c.Assert(handle.Weights, HasLen, 1)
-	c.Assert(w == handle.Weights["foo"], Equals, true)
+	c.Assert(w == handle.Weights[foo], Equals, true)
 
 	entry := handle.Search("nomatch")
 	c.Assert(entry, Equals, db.Entry{})
 	for _, query := range []string{"f", "foo", "oo"} {
 		entry = handle.Search(query)
-		c.Assert(entry.Path, Equals, "foo")
+		c.Assert(entry.Path, Equals, foo)
 	}
 
 	// remove the non-existent directory
 	handle.Prune(100)
-	c.Assert(handle.Weights, HasLen, 0)
-
-	// add one that does exist
-	handle.AdjustWeight("/tmp", 1)
-	handle.Prune(100)
 	c.Assert(handle.Weights, HasLen, 1)
-
-	// force remove it
-	handle.Remove("/tmp")
-	c.Assert(handle.Weights, HasLen, 0)
-	c.Assert(handle.SumWeights(), Equals, 0.)
 
 	buf := bytes.Buffer{}
 	c.Assert(handle.Dump(&buf), IsNil)
-	c.Assert(buf.String(), Equals, "")
-
-	handle.AdjustWeight("foo", 1)
-	buf = bytes.Buffer{}
-	c.Assert(handle.Dump(&buf), IsNil)
 	c.Assert(buf.String(), Not(Equals), "")
 
-	handle.AdjustWeight("foo", -0.5)
+	handle.AdjustWeight(foo, -0.5)
 	c.Assert(handle.Weights, HasLen, 1)
-	handle.AdjustWeight("foo", -2)
+	handle.AdjustWeight(foo, -2)
 	c.Assert(handle.Weights, HasLen, 0)
 
-	defer os.RemoveAll(filepath.Join(os.TempDir(), "dbtest"))
 	for i := 0; i < 10; i++ {
 		dirName := filepath.Join(os.TempDir(), "dbtest", strconv.Itoa(i))
 		c.Assert(os.MkdirAll(dirName, 0755), IsNil)

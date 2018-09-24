@@ -24,7 +24,7 @@ _print_red() {
 jump_jump() {
   local dest
   dest="$(jump search "$1")"
-  if [[ -n "$dest" ]] && [[ -d "$dest" ]]; then
+  if [[ -n "$dest" ]] ; then
     _print_red "$dest"
     cd "$dest" || return
   else
