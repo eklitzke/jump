@@ -33,5 +33,5 @@ var pruneCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(pruneCmd)
-	pruneCmd.Flags().IntVarP(&pruneCount, "num-database-entries", "n", 1000, "Number of databse entries to keep")
+	pruneCmd.Flags().IntVarP(&pruneCount, "num-database-entries", "n", 1000, "Number of database entries to keep")
 }

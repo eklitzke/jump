@@ -60,7 +60,7 @@ func (s *Searcher) Search(needle string, cmp StringCompare, alpha float64) {
 }
 
 // Best returns the best matching entry that is actually a directory.
-func (s *Searcher) Best() (Entry, []string) {
+func (s *Searcher) Best(count int) ([]Entry, []string) {
 	var errorPaths []string
 	entries := toEntryList(s.output)
 	sort.Sort(descendingWeight(entries))
@@ -69,15 +69,19 @@ func (s *Searcher) Best() (Entry, []string) {
 			log.Debug().Int("rank", rank).Float64("score", entry.Weight).Str("path", entry.Path).Msg("final search candidate")
 		}
 	}
+
+	var results []Entry
 	for _, entry := range entries {
 		if err := CheckIsDir(entry.Path); err != nil {
 			errorPaths = append(errorPaths, entry.Path)
 			continue
 		}
-		return entry, errorPaths
+		results = append(results, entry)
+		if len(results) >= count {
+			break
+		}
 	}
-	log.Debug().Msg("no entries found for query")
-	return Entry{}, errorPaths
+	return results, errorPaths
 }
 
 // NewSearcher creates a new searcher instance.

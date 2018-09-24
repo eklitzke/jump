@@ -48,7 +48,7 @@ type Database interface {
 
 	// Search for a query and find the best match.
 	// TODO: allow this to return multiple results.
-	Search(...string) Entry
+	Search(int, ...string) []Entry
 }
 
 // NewDatabase loads a database file.

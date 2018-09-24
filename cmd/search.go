@@ -23,6 +23,9 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var verbose bool
+var searchCount int
+
 // searchCmd represents the search command
 var searchCmd = &cobra.Command{
 	Use:   "search",
@@ -31,16 +34,20 @@ var searchCmd = &cobra.Command{
 		if len(args) != 1 {
 			log.Fatal().Int("argcount", len(args)).Interface("args", args).Msg("expected exactly one search argument")
 		}
-		entry := handle.Search(args...)
-		if entry.Path != "" {
-			log.Debug().Str("path", entry.Path).Float64("weight", entry.Weight).Msg("found match")
-			fmt.Println(entry.Path)
-			return
+		entries := handle.Search(searchCount, args...)
+		for _, entry := range entries {
+			if verbose {
+				fmt.Printf("%10.4f  %s\n", entry.Weight, entry.Path)
+			} else {
+				fmt.Println(entry.Path)
+			}
+
 		}
-		log.Debug().Msg("no match found")
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(searchCmd)
+	searchCmd.Flags().IntVarP(&searchCount, "num-results", "n", 1, "Number of database entries to keep")
+	searchCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Show verbose results")
 }

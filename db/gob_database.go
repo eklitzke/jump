@@ -112,13 +112,13 @@ func (d *GobDatabase) Save(w io.Writer) error {
 }
 
 // Search searches for the best database entry.
-func (d *GobDatabase) Search(needles ...string) Entry {
+func (d *GobDatabase) Search(count int, needles ...string) []Entry {
 	s := NewSearcher(d.Weights, d.opts)
 
 	// TODO: Implement multi query search, right now we only query the last
 	// argument.
 	if len(needles) == 0 {
-		return Entry{}
+		return nil
 	}
 	needle := needles[len(needles)-1]
 
@@ -136,7 +136,7 @@ func (d *GobDatabase) Search(needles ...string) Entry {
 	s.Search(needle, strings.Contains, 1.)
 
 	// find the best match
-	best, errorPaths := s.Best()
+	results, errorPaths := s.Best(count)
 
 	// if any errors were encountered, remove those paths
 	for _, path := range errorPaths {
@@ -144,7 +144,7 @@ func (d *GobDatabase) Search(needles ...string) Entry {
 		d.Remove(path)
 	}
 
-	return best
+	return results
 }
 
 // Dump prints the database to the specified writer.
