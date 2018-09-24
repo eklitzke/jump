@@ -30,6 +30,9 @@ var searchCmd = &cobra.Command{
 	Use:   "search",
 	Short: "Search the database for matches",
 	Run: func(cmd *cobra.Command, args []string) {
+		if len(args) != 1 {
+			log.Fatal().Int("argcount", len(args)).Interface("args", args).Msg("expected exactly one search argument")
+		}
 		entry := handle.Search(args[0], enableTimeMatching)
 		if entry.Path != "" {
 			log.Debug().Str("path", entry.Path).Float64("weight", entry.Weight).Msg("found match")
