@@ -10,5 +10,5 @@ jobs:
     steps:
       - checkout
       - run: go get -v -t -d ./...
-      - run: go test -coverprofile=coverage.txt -covermode=count ./...
+      - run: go test -coverprofile=coverage.txt -covermode=count ./db
       - run: bash <(curl -s https://codecov.io/bash)

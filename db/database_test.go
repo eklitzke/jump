@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"io/ioutil"
 	"os"
+	"path/filepath"
+	"strconv"
 	"testing"
 
 	"github.com/eklitzke/jump/db"
@@ -30,6 +32,7 @@ func (s *MySuite) TestDatabaseEndToEnd(c *C) {
 	w := handle.Weights["foo"]
 	c.Assert(w > 0, Equals, true)
 	c.Assert(handle.Weights, HasLen, 1)
+	c.Assert(handle.Save(), IsNil)
 	c.Assert(handle.Save(), IsNil)
 
 	handle = db.LoadDatabase(f.Name())
@@ -60,6 +63,34 @@ func (s *MySuite) TestDatabaseEndToEnd(c *C) {
 	buf := bytes.Buffer{}
 	c.Assert(handle.Dump(&buf), IsNil)
 	c.Assert(buf.String(), Equals, "")
+
+	handle.AdjustWeight("foo", 1)
+	buf = bytes.Buffer{}
+	c.Assert(handle.Dump(&buf), IsNil)
+	c.Assert(buf.String(), Not(Equals), "")
+
+	handle.AdjustWeight("foo", -0.5)
+	c.Assert(handle.Weights, HasLen, 1)
+	handle.AdjustWeight("foo", -2)
+	c.Assert(handle.Weights, HasLen, 0)
+
+	defer os.RemoveAll(filepath.Join(os.TempDir(), "dbtest"))
+	for i := 0; i < 10; i++ {
+		dirName := filepath.Join(os.TempDir(), "dbtest", strconv.Itoa(i))
+		c.Assert(os.MkdirAll(dirName, 0755), IsNil)
+		handle.AdjustWeight(dirName, 1)
+	}
+
+	nonDir := filepath.Join(os.TempDir(), "foo.txt")
+	g, err := os.Create(nonDir)
+	c.Assert(err, IsNil)
+	c.Assert(g.Close(), IsNil)
+	defer os.Remove(nonDir)
+	handle.AdjustWeight(nonDir, 1)
+
+	handle.Prune(3)
+	c.Assert(handle.Weights, HasLen, 3)
+	c.Assert(handle.SumWeights(), Not(Equals), 0.)
 }
 
 func (s *MySuite) TestConfig(c *C) {

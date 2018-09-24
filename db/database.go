@@ -120,7 +120,7 @@ func (d *Database) Prune(maxEntries int) {
 		sort.Sort(ascendingWeight(entries))
 		for i, entry := range entries {
 			delete(d.Weights, entry.Path)
-			if i >= deleteCount {
+			if i == deleteCount-1 {
 				break
 			}
 		}
