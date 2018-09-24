@@ -95,6 +95,7 @@ func (d *Database) Prune(maxEntries int) {
 		if err != nil {
 			log.Debug().Err(err).Msg("failed to stat file")
 			delete(d.Weights, path)
+			continue
 		}
 		if !st.IsDir() {
 			log.Debug().Msg("removing non-directory entry")
