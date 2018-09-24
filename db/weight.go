@@ -16,7 +16,12 @@
 
 package db
 
-import "time"
+import (
+	"fmt"
+	"io"
+	"sort"
+	"time"
+)
 
 // Weight represents a weight value with a timestamp.
 type Weight struct {
@@ -34,3 +39,16 @@ func NewWeight(val float64) Weight {
 
 // WeightMap is a map from string paths to weights.
 type WeightMap map[string]Weight
+
+// Dump prints the database to the specified writer.
+func Dump(weights WeightMap, w io.Writer) error {
+	entries := toEntryList(weights)
+	sort.Sort(descendingWeight(entries))
+	for _, entry := range entries {
+		t := entry.UpdatedAt.Round(time.Second).Format("2006-01-02 15:04 MST")
+		if _, err := fmt.Fprintf(w, "%-12.6f %-25s %s\n", entry.Weight, t, entry.Path); err != nil {
+			return err
+		}
+	}
+	return nil
+}

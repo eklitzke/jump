@@ -31,7 +31,7 @@ var importCmd = &cobra.Command{
 		if err != nil {
 			log.Fatal().Err(err).Msg("failed to load autojump database")
 		}
-		handle.Weights = newWeights
+		handle.Replace(newWeights)
 	},
 }
 

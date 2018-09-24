@@ -33,7 +33,7 @@ var debug bool
 var timeMatching bool
 var logCaller bool
 var logLevel string
-var handle *db.Database
+var handle db.Database
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -108,7 +108,7 @@ func initLogging() {
 }
 
 func initDBHandle() {
-	handle = db.LoadDatabase(dbPath, db.Options{
+	handle = db.NewDatabase(dbPath, db.Options{
 		Debug:        debug,
 		TimeMatching: timeMatching,
 	})
