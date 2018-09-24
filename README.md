@@ -13,6 +13,12 @@ difference is noticeable anyway. I think `jump` is less likely to silently
 corrupt your jump database than autojump, but as always the principle of *caveat
 emptor* applies.
 
+Features:
+
+ * Small and fast, written in Go
+ * Binary database format (proven to be 666% faster than text databases)
+ * Bloat free (i.e. missing all of the features you probably need)
+
 ## Installation
 
 If you use Bash and want to try out my code, you can set it up like this:
