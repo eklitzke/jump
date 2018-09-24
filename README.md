@@ -17,6 +17,7 @@ Features:
 
  * Small and fast, written in Go
  * Binary database format (proven to be 666% faster than text databases)
+ * Incorporates access recency in search rankings
  * Bloat free (i.e. missing all of the features you probably need)
 
 ## Installation

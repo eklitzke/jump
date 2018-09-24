@@ -62,10 +62,10 @@ func (s *MySuite) TestDatabaseEndToEnd(c *C) {
 	c.Assert(handle.Weights, HasLen, 1)
 	c.Assert(w == handle.Weights[foo], Equals, true)
 
-	entry := handle.Search("nomatch")
+	entry := handle.Search("nomatch", true)
 	c.Assert(entry, Equals, db.Entry{})
 	for _, query := range []string{"f", "foo", "oo"} {
-		entry = handle.Search(query)
+		entry = handle.Search(query, false)
 		c.Assert(entry.Path, Equals, foo)
 	}
 

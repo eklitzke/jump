@@ -182,8 +182,8 @@ func (d *Database) Save() error {
 }
 
 // Search searches for the best database entry.
-func (d *Database) Search(needle string) Entry {
-	s := NewSearcher(d.Weights)
+func (d *Database) Search(needle string, timeMatching bool) Entry {
+	s := NewSearcher(d.Weights, timeMatching)
 
 	// first check exact suffix matches
 	exact := needle

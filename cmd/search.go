@@ -23,12 +23,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var enableTimeMatching bool
+
 // searchCmd represents the search command
 var searchCmd = &cobra.Command{
 	Use:   "search",
 	Short: "Search the database for matches",
 	Run: func(cmd *cobra.Command, args []string) {
-		entry := handle.Search(args[0])
+		entry := handle.Search(args[0], enableTimeMatching)
 		if entry.Path != "" {
 			log.Debug().Str("path", entry.Path).Float64("weight", entry.Weight).Msg("found match")
 			fmt.Println(entry.Path)
@@ -40,4 +42,5 @@ var searchCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(searchCmd)
+	searchCmd.Flags().BoolVarP(&enableTimeMatching, "time-matching", "t", true, "Enable time matching")
 }

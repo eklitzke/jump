@@ -18,8 +18,10 @@ package db
 
 import (
 	"errors"
+	"math"
 	"os"
 	"sort"
+	"time"
 
 	"github.com/rs/zerolog/log"
 )
@@ -29,8 +31,9 @@ type StringCompare func(string, string) bool
 
 // Searcher implements the matching algorithm.
 type Searcher struct {
-	input  WeightMap // read-only input weights
-	output WeightMap // output weights
+	input        WeightMap // read-only input weights
+	output       WeightMap // output weights
+	timeMatching bool      // should time matching be enabled?
 }
 
 // Search searches for the needle in the input list using the given comparator,
@@ -42,7 +45,15 @@ func (s *Searcher) Search(needle string, cmp StringCompare, alpha float64) {
 				w.Value *= alpha
 				s.output[path] = w
 			} else {
-				inputWeight.Value *= alpha
+				beta := alpha
+				if s.timeMatching {
+					elapsed := time.Since(inputWeight.UpdatedAt).Seconds()
+					if elapsed > 0 {
+						beta /= math.Log(elapsed)
+					}
+				}
+				log.Debug().Float64("alpha", alpha).Float64("beta", beta).Str("path", path).Msg("found search candidate")
+				inputWeight.Value *= beta
 				s.output[path] = inputWeight
 			}
 		}
@@ -66,10 +77,11 @@ func (s *Searcher) Best() (Entry, []string) {
 }
 
 // NewSearcher creates a new searcher instance.
-func NewSearcher(input WeightMap) *Searcher {
+func NewSearcher(input WeightMap, timeMatching bool) *Searcher {
 	return &Searcher{
-		input:  input,
-		output: make(WeightMap),
+		input:        input,
+		output:       make(WeightMap),
+		timeMatching: timeMatching,
 	}
 }
 
