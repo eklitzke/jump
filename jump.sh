@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2019 Evan Klitzke <evan@eklitzke.org>
+# Copyright 2018 Evan Klitzke <evan@eklitzke.org>
 #
 # This file is part of jump.
 #
