@@ -34,13 +34,17 @@ $ echo '. ~/.jump.sh' >> ~/.bashrc
 ```
 
 To check that everything is set up correctly, launch a new Bash shell (e.g. by
-creating a new terminal window) and check that you see output something like
-this:
+creating a new terminal window) and check that typing `j help` as a command
+produces output like this:
 
 ```bash
-# Check that j is available as a shell function
-$ type -t j
-function
+# Check that jump.sh is sourced properly by your shell.
+$ j help
+Usage:
+  j QUERY     jump to directory matching QUERY
+  jc QUERY    jump to subdirectory matching QUERY
+  jo QUERY    open the file matching QUERY
+  jco QUERY   open the subdirectory file matching QUERY
 ```
 
 ## Usage

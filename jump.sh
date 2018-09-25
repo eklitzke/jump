@@ -22,6 +22,17 @@ _print_red() {
 
 # Try to jump to the best matching entry in the jump database.
 j() {
+  # Print help if that's the search query (use "j -- help" to use "help" as the
+  # actual query).
+  if [[ $# -eq 1 ]] && [[ "$1" == help ]]; then
+    echo "Usage:"
+    echo "  j QUERY     jump to directory matching QUERY"
+    echo "  jc QUERY    jump to subdirectory matching QUERY"
+    echo "  jo QUERY    open the file matching QUERY"
+    echo "  jco QUERY   open the subdirectory file matching QUERY"
+    return
+  fi
+
   local dest
   dest="$(jump search "$@")"
   if [[ -n "$dest" ]] ; then
