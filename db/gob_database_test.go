@@ -41,8 +41,10 @@ func (s *MySuite) TestDatabaseEndToEnd(c *C) {
 	w := handle.Weights[foo]
 	c.Assert(w.Value > 0, Equals, true)
 	c.Assert(handle.Weights, HasLen, 1)
+	c.Assert(handle.Dirty(), Equals, true)
 	buf := new(bytes.Buffer)
 	c.Assert(handle.Save(buf), IsNil)
+	c.Assert(handle.Dirty(), Equals, false)
 
 	handle = db.NewGobDatabase(buf, db.Options{TimeMatching: true})
 	c.Assert(handle.Weights, HasLen, 1)

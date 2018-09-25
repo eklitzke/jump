@@ -37,8 +37,7 @@ type Database interface {
 	Remove(string)
 
 	// Replace the current weights.
-	// TODO: this is hacky
-	Replace(WeightMap)
+	Replace([]Entry)
 
 	// Prune the database.
 	Prune(int)

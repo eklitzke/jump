@@ -29,8 +29,8 @@ type StringCompare func(string, string) bool
 
 // Searcher implements the matching algorithm.
 type Searcher struct {
-	input  WeightMap // read-only input weights
-	output WeightMap // output weights
+	input  weightMap // read-only input weights
+	output weightMap // output weights
 	opts   Options   // options
 }
 
@@ -85,10 +85,10 @@ func (s *Searcher) Best(count int) ([]Entry, []string) {
 }
 
 // NewSearcher creates a new searcher instance.
-func NewSearcher(input WeightMap, opts Options) *Searcher {
+func NewSearcher(input weightMap, opts Options) *Searcher {
 	return &Searcher{
 		input:  input,
-		output: make(WeightMap),
+		output: make(weightMap),
 		opts:   opts,
 	}
 }

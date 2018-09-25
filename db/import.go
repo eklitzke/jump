@@ -21,6 +21,7 @@ import (
 	"io"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/rs/zerolog/log"
 )
@@ -36,8 +37,8 @@ func FindAutojumpDatabase() string {
 }
 
 // LoadAutojumpDatabase loads the autojump database file
-func LoadAutojumpDatabase(r io.Reader) (map[string]Weight, error) {
-	weights := make(map[string]Weight)
+func LoadAutojumpDatabase(r io.Reader) ([]Entry, error) {
+	var entries []Entry
 	scanner := bufio.NewScanner(r)
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -53,12 +54,15 @@ func LoadAutojumpDatabase(r io.Reader) (map[string]Weight, error) {
 			log.Warn().Str("line", line).Msg("failed to parse weight as float64")
 			continue
 		}
-		path := strings.TrimSpace(line[sep:])
-		weights[path] = NewWeight(weight)
+		entries = append(entries, Entry{
+			Path:      strings.TrimSpace(line[sep:]),
+			Weight:    weight,
+			UpdatedAt: time.Now().UTC(),
+		})
 	}
 	if err := scanner.Err(); err != nil {
 		log.Error().Err(err).Msg("error scanning file")
 		return nil, err
 	}
-	return weights, nil
+	return entries, nil
 }

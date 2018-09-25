@@ -32,7 +32,7 @@ import (
 type GobDatabase struct {
 	dirty   bool      // dirty bit
 	opts    Options   // database options
-	Weights WeightMap // map of entry to weight
+	Weights weightMap // map of entry to weight
 }
 
 // AdjustWeight adjusts the weight of a path. The adjusted weight value is
@@ -109,7 +109,12 @@ func (d *GobDatabase) Prune(maxEntries int) {
 // Save atomically saves the database.
 func (d *GobDatabase) Save(w io.Writer) error {
 	enc := gob.NewEncoder(w)
-	return enc.Encode(d.Weights)
+	if err := enc.Encode(d.Weights); err != nil {
+		log.Error().Err(err).Msg("failed to encode gob database")
+		return err
+	}
+	d.dirty = false
+	return nil
 }
 
 // Search searches for the best database entry.
@@ -158,8 +163,11 @@ func (d *GobDatabase) Dump() interface{} {
 }
 
 // Replace replaces the underlying weight map.
-func (d *GobDatabase) Replace(weights WeightMap) {
-	d.Weights = weights
+func (d *GobDatabase) Replace(entries []Entry) {
+	d.Weights = make(weightMap)
+	for _, entry := range entries {
+		d.Weights[entry.Path] = Weight{Value: entry.Weight, UpdatedAt: entry.UpdatedAt}
+	}
 	d.dirty = true
 }
 
@@ -167,7 +175,7 @@ func (d *GobDatabase) Replace(weights WeightMap) {
 func NewGobDatabase(r io.Reader, opts Options) *GobDatabase {
 	db := &GobDatabase{
 		opts:    opts,
-		Weights: make(WeightMap),
+		Weights: make(weightMap),
 	}
 	dec := gob.NewDecoder(r)
 	if err := dec.Decode(&db.Weights); err != nil {

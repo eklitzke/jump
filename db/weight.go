@@ -34,5 +34,5 @@ func NewWeight(val float64) Weight {
 	}
 }
 
-// WeightMap is a map from string paths to weights.
-type WeightMap map[string]Weight
+// weightMap is a map from string paths to weights.
+type weightMap map[string]Weight

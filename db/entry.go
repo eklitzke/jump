@@ -37,7 +37,7 @@ func (a ascendingWeight) Len() int           { return len(a) }
 func (a ascendingWeight) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a ascendingWeight) Less(i, j int) bool { return a[i].Weight < a[j].Weight }
 
-func toEntryList(w WeightMap) []Entry {
+func toEntryList(w weightMap) []Entry {
 	var entries []Entry
 	for path, weight := range w {
 		entries = append(entries, Entry{

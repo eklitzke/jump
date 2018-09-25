@@ -19,24 +19,26 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/eklitzke/jump/db"
 	"github.com/spf13/cobra"
 )
 
 var verbose bool
 var searchCount int
 
-// searchCmd represents the search command
 var searchCmd = &cobra.Command{
 	Use:   "search",
 	Short: "Search the database for matches",
 	Run: func(cmd *cobra.Command, args []string) {
+		var printer func(db.Entry)
+		if verbose {
+			printer = func(e db.Entry) { fmt.Printf("%10.4f  %s\n", e.Weight, e.Path) }
+		} else {
+			printer = func(e db.Entry) { fmt.Println(e.Path) }
+		}
 		entries := handle.Search(searchCount, args...)
 		for _, entry := range entries {
-			if verbose {
-				fmt.Printf("%10.4f  %s\n", entry.Weight, entry.Path)
-			} else {
-				fmt.Println(entry.Path)
-			}
+			printer(entry)
 		}
 	},
 }
