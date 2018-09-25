@@ -18,7 +18,7 @@ Features:
  * Small and fast, written in Go
  * Binary database format (proven to be 666% faster than text databases)
  * Incorporates access recency in search rankings
- * Bloat free (i.e. missing all of the features you probably need)
+ * Compatibility with autojump shell commands (`j`, `jc`, `jo`, and `jco`)
 
 ## Installation
 
@@ -38,9 +38,9 @@ creating a new terminal window) and check that you see output something like
 this:
 
 ```bash
-# Check that j is aliased to the jump.sh provided _jump_jump function.
-$ type j
-j is aliased to `_jump_jump'
+# Check that j is available as a shell function
+$ type -t j
+function
 ```
 
 ## Usage

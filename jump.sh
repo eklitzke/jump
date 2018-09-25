@@ -34,15 +34,26 @@ j() {
 
 # Jump to child directory.
 jc() {
-  if [[ "$1" == -* ]] && [[ "$1" != "--" ]]; then
-    j "$@"
+  j "$PWD" "$@"
+}
+
+# Open a file using xdg-open. This is kind of stupid, but it's provided here to
+# provide feature parity with autojump.
+jo() {
+  local f
+  f="$(jump search "$@")"
+  if [[ -f "$f" ]]; then
+    _print_red "$f"
+    xdg-open "$f"
   else
-    j "$PWD" "$@"
+    _print_red "no matches found"
   fi
 }
 
-# N.B. jo and jco are not defined because they shouldn't exist in the first
-# place.
+# Likewise, but for the child directory.
+jco() {
+  jc "$PWD" "$@"
+}
 
 # Check if jump is available, and if so set up PROMPT_COMMAND.
 if command -v jump &>/dev/null; then
