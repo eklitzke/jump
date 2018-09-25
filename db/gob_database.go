@@ -21,6 +21,7 @@ import (
 	"io"
 	"math"
 	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 
@@ -115,12 +116,8 @@ func (d *GobDatabase) Save(w io.Writer) error {
 func (d *GobDatabase) Search(count int, needles ...string) []Entry {
 	s := NewSearcher(d.Weights, d.opts)
 
-	// TODO: Implement multi query search, right now we only query the last
-	// argument.
-	if len(needles) == 0 {
-		return nil
-	}
-	needle := needles[len(needles)-1]
+	// Assume all components form the suffix of the directory name.
+	needle := filepath.Join(needles...)
 
 	// first check exact suffix matches
 	exact := needle

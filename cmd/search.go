@@ -19,7 +19,6 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 )
 
@@ -31,9 +30,6 @@ var searchCmd = &cobra.Command{
 	Use:   "search",
 	Short: "Search the database for matches",
 	Run: func(cmd *cobra.Command, args []string) {
-		if len(args) != 1 {
-			log.Fatal().Int("argcount", len(args)).Interface("args", args).Msg("expected exactly one search argument")
-		}
 		entries := handle.Search(searchCount, args...)
 		for _, entry := range entries {
 			if verbose {
