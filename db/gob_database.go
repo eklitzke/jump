@@ -178,7 +178,7 @@ func NewGobDatabase(r io.Reader, opts Options) *GobDatabase {
 		Weights: make(weightMap),
 	}
 	dec := gob.NewDecoder(r)
-	if err := dec.Decode(&db.Weights); err != nil {
+	if err := dec.Decode(&db.Weights); err != nil && err != io.EOF {
 		log.Error().Err(err).Msg("failed to decode weights for gob database")
 	}
 	return db
