@@ -150,16 +150,8 @@ func (d *GobDatabase) Search(count int, needles ...string) []Entry {
 }
 
 // Dump prints the database to the specified writer.
-func (d *GobDatabase) Dump() interface{} {
-	output := struct {
-		Format  string  `json:"format"`
-		Weights []Entry `json:"weights"`
-	}{
-		Format:  "gob",
-		Weights: toEntryList(d.Weights),
-	}
-	sort.Sort(descendingWeight(output.Weights))
-	return output
+func (d *GobDatabase) GetWeights() []Entry {
+	return toEntryList(d.Weights)
 }
 
 // Replace replaces the underlying weight map.

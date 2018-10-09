@@ -17,6 +17,7 @@
 package cmd
 
 import (
+	"github.com/eklitzke/jump/db"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 )
@@ -26,7 +27,7 @@ var dumpCmd = &cobra.Command{
 	Use:   "dump",
 	Short: "Dump database contents as plaintext",
 	Run: func(cmd *cobra.Command, args []string) {
-		obj := handle.Dump()
+		obj := db.Dump(handle)
 		enc := newStdoutJSONEncoder()
 		if err := enc.Encode(obj); err != nil {
 			log.Warn().Err(err).Msg("failed to json encode database")

@@ -18,6 +18,7 @@ package db
 
 import (
 	"io"
+	"sort"
 )
 
 // Database represents the database.
@@ -30,8 +31,8 @@ type Database interface {
 	// TODO: this is a little hacky.
 	Dirty() bool
 
-	// Return a JSON serializable representation of the database.
-	Dump() interface{}
+	// Return the list of weights in the database.
+	GetWeights() []Entry
 
 	// Remove a path from the database.
 	Remove(string)
@@ -53,4 +54,18 @@ type Database interface {
 // NewDatabase loads a database file.
 func NewDatabase(r io.Reader, opts Options) Database {
 	return NewGobDatabase(r, opts)
+}
+
+// Dump returns a JSON serializable representation of the database weights.
+func Dump(d Database) interface{} {
+	output := struct {
+		Format  string  `json:"format"`
+		Weights []Entry `json:"weights"`
+	}{
+		Format:  "gob",
+		Weights: d.GetWeights(),
+	}
+	sort.Sort(descendingWeight(output.Weights))
+	return output
+
 }
