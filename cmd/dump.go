@@ -22,12 +22,17 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var dumpShort bool
+
 // dumpCmd represents the dump command
 var dumpCmd = &cobra.Command{
 	Use:   "dump",
 	Short: "Dump database contents as plaintext",
 	Run: func(cmd *cobra.Command, args []string) {
-		obj := db.Dump(handle)
+		dumpOpts := db.DumpOpts{
+			Short: dumpShort,
+		}
+		obj := db.Dump(handle, dumpOpts)
 		enc := newStdoutJSONEncoder()
 		if err := enc.Encode(obj); err != nil {
 			log.Warn().Err(err).Msg("failed to json encode database")
@@ -37,4 +42,5 @@ var dumpCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(dumpCmd)
+	dumpCmd.Flags().BoolVar(&dumpShort, "short-paths", false, "Dump shortened paths")
 }
