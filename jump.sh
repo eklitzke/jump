@@ -44,9 +44,7 @@ j() {
 }
 
 # Jump to child directory.
-jc() {
-  j "$PWD" "$@"
-}
+jc() { j "$PWD" "$@"; }
 
 # Open a file using xdg-open. This is kind of stupid, but it's provided here to
 # provide feature parity with autojump.
@@ -62,15 +60,16 @@ jo() {
 }
 
 # Likewise, but for the child directory.
-jco() {
-  jc "$PWD" "$@"
-}
+jco() { jc "$PWD" "$@"; }
+
+# Run jump update
+ju() { if (( JUMP_ENABLED )); then jump update; fi; }
 
 # Check if jump is available, and if so set up PROMPT_COMMAND.
 if command -v jump &>/dev/null; then
-  if [[ "x${JUMP_ENABLED}" = x ]]; then
-    PROMPT_COMMAND="${PROMPT_COMMAND};jump update"
-    JUMP_ENABLED=yes
+  if (( ! JUMP_ENABLED )); then
+    PROMPT_COMMAND="${PROMPT_COMMAND};ju"
+    declare -i JUMP_ENABLED=1
     export JUMP_ENABLED
   fi
 fi
