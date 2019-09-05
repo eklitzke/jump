@@ -16,15 +16,14 @@
 # You should have received a copy of the GNU General Public License along with
 # jump. If not, see <http://www.gnu.org/licenses/>.
 
-_print_red() {
-  printf '\033[0;31m%s\033[0m\n' "$1"
-}
+# Print red text.
+_jump_print_red() { printf '\033[0;31m%s\033[0m\n' "$1"; }
 
 # Try to jump to the best matching entry in the jump database.
 j() {
   # Print help if that's the search query (use "j -- help" to use "help" as the
   # actual query).
-  if [[ $# -eq 1 ]] && [[ "$1" == help ]]; then
+  if [[ $# -eq 1 ]] && [[ $1 == help ]]; then
     echo "Usage:"
     echo "  j QUERY     jump to directory matching QUERY"
     echo "  jc QUERY    jump to subdirectory matching QUERY"
@@ -34,12 +33,12 @@ j() {
   fi
 
   local dest
-  dest="$(jump search "$@")"
-  if [[ -n "$dest" ]] ; then
-    _print_red "$dest"
+  dest=$(jump search "$@")
+  if [[ -n $dest ]] ; then
+    _jump_print_red "$dest"
     cd "$dest" || return 1
   else
-    _print_red "no matches found"
+    _jump_print_red "no matches found"
   fi
 }
 
@@ -50,12 +49,12 @@ jc() { j "$PWD" "$@"; }
 # provide feature parity with autojump.
 jo() {
   local f
-  f="$(jump search "$@")"
-  if [[ -f "$f" ]]; then
-    _print_red "$f"
+  f=$(jump search "$@")
+  if [[ -f $f ]]; then
+    _jump_print_red "$f"
     xdg-open "$f"
   else
-    _print_red "no matches found"
+    _jump_print_red "no matches found"
   fi
 }
 
