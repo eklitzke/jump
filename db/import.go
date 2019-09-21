@@ -19,6 +19,8 @@ package db
 import (
 	"bufio"
 	"io"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -32,8 +34,8 @@ const (
 )
 
 func FindAutojumpDatabase() string {
-	x := newXDG(autojumpVendor)
-	return x.QueryData(autojumpDbFile)
+	// XXX: Or is it config dir? I forget
+	return filepath.Join(dirOrTmp(os.UserCacheDir()), autojumpVendor, autojumpDbFile)
 }
 
 // LoadAutojumpDatabase loads the autojump database file

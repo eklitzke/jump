@@ -31,7 +31,8 @@ func newStdoutJSONEncoder() *json.Encoder {
 }
 
 type configDisplay struct {
-	Paths map[string]string `json:"paths"`
+	Paths    map[string]string `json:"paths"`
+	Excludes []string          `json:"excludes"`
 }
 
 var varsCmd = &cobra.Command{

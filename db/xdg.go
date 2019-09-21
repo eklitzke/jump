@@ -17,9 +17,8 @@
 package db
 
 import (
+	"os"
 	"path/filepath"
-
-	goxdg "github.com/OpenPeeDeeP/xdg"
 )
 
 const (
@@ -28,28 +27,19 @@ const (
 	configName = "jump.yml" // the config file name
 )
 
-// a handle to an xdg instance
-var xdg *goxdg.XDG
-
-func init() {
-	xdg = newXDG(vendorName)
+func dirOrTmp(dir string, err error) string {
+	if err != nil {
+		return "/tmp"
+	}
+	return dir
 }
 
-func newXDG(vendor string) *goxdg.XDG {
-	return goxdg.New(vendor, "")
-}
-
-// DatabasePath looks up the full path to the database file. The method ensures
-// the data directory exists, so writers to the database don't need to handle
-// this case.
+// DatabasePath looks up the full path to the database file.
 func DatabasePath() string {
-	// We don't use xdg.QueryData here because it checks that the containing
-	// directory exists; we defer directory creation until we actually save
-	// the database.
-	return filepath.Join(xdg.DataHome(), dbName)
+	return filepath.Join(dirOrTmp(os.UserCacheDir()), vendorName, dbName)
 }
 
 // ConfigPath returns the path to the jump config file.
 func ConfigPath() string {
-	return filepath.Join(xdg.ConfigHome(), configName)
+	return filepath.Join(dirOrTmp(os.UserConfigDir()), vendorName, configName)
 }
