@@ -68,7 +68,6 @@ ju() { if (( JUMP_ENABLED )); then jump update; fi; }
 if command -v jump &>/dev/null; then
   if (( ! JUMP_ENABLED )); then
     PROMPT_COMMAND="${PROMPT_COMMAND};ju"
-    declare -i JUMP_ENABLED=1
-    export JUMP_ENABLED
+    export JUMP_ENABLED=1
   fi
 fi
