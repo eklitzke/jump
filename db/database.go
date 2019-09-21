@@ -40,7 +40,7 @@ type Database interface {
 	Replace([]Entry)
 
 	// Prune the database.
-	Prune(int)
+	Prune(int, []string)
 
 	// Save the database to a writer.
 	Save(io.Writer) error

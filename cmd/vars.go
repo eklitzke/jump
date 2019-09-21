@@ -31,18 +31,22 @@ func newStdoutJSONEncoder() *json.Encoder {
 }
 
 type configDisplay struct {
-	Paths    map[string]string `json:"paths"`
-	Excludes []string          `json:"excludes"`
+	Paths           map[string]string `json:"paths"`
+	ExcludePatterns []string          `json:"excludePatterns"`
 }
 
 var varsCmd = &cobra.Command{
 	Use:   "vars",
 	Short: "Print variables",
 	Run: func(cmd *cobra.Command, args []string) {
-		display := configDisplay{Paths: map[string]string{
-			"config":   cfgFile,
-			"database": dbPath,
-		}}
+		c := loadConfig()
+		display := configDisplay{
+			Paths: map[string]string{
+				"config":   cfgFile,
+				"database": dbPath,
+			},
+			ExcludePatterns: c.ExcludePatterns,
+		}
 		enc := newStdoutJSONEncoder()
 		if err := enc.Encode(display); err != nil {
 			log.Warn().Err(err).Msg("failed to json encode vars")

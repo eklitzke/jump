@@ -1,4 +1,4 @@
-// Copyright 2018 Evan Klitzke <evan@eklitzke.org>
+// Copyright 2019 Evan Klitzke <evan@eklitzke.org>
 //
 // This file is part of jump.
 //
@@ -17,22 +17,21 @@
 package cmd
 
 import (
-	"github.com/spf13/cobra"
+	"io/ioutil"
+
+	"gopkg.in/yaml.v2"
 )
 
-var pruneCount int
-
-// pruneCmd represents the prune command
-var pruneCmd = &cobra.Command{
-	Use:   "prune",
-	Short: "Automatically prune old or invalid database entries",
-	Run: func(cmd *cobra.Command, args []string) {
-		config := loadConfig()
-		handle.Prune(pruneCount, config.ExcludePatterns)
-	},
+type config struct {
+	ExcludePatterns []string `yaml:"ExcludePatterns"`
 }
 
-func init() {
-	rootCmd.AddCommand(pruneCmd)
-	pruneCmd.Flags().IntVarP(&pruneCount, "num-database-entries", "n", 1000, "Number of database entries to keep")
+func loadConfig() *config {
+	c := &config{}
+	yamlFile, err := ioutil.ReadFile(cfgFile)
+	if err != nil {
+		return c
+	}
+	_ = yaml.Unmarshal(yamlFile, c)
+	return c
 }

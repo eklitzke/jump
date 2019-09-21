@@ -70,20 +70,29 @@ func (d *GobDatabase) Remove(path string) {
 }
 
 // Prune removes entries from the database that no longer exist.
-func (d *GobDatabase) Prune(maxEntries int) {
+func (d *GobDatabase) Prune(maxEntries int, excludePatterns []string) {
 	// delete non-existent entries
 	for path := range d.Weights {
 		st, err := os.Stat(path)
 		if err != nil {
-			log.Debug().Err(err).Msg("failed to stat file")
+			log.Debug().Err(err).Str("path", path).Msg("failed to stat file")
 			delete(d.Weights, path)
 			d.dirty = true
 			continue
 		}
 		if !st.IsDir() {
-			log.Debug().Msg("removing non-directory entry")
+			log.Debug().Str("path", path).Msg("removing non-directory entry")
 			delete(d.Weights, path)
 			d.dirty = true
+			continue
+		}
+		for _, pattern := range excludePatterns {
+			if strings.Contains(path, pattern) {
+				log.Debug().Str("path", path).Str("pattern", pattern).Msg("removing path matching exclude pattern")
+				delete(d.Weights, path)
+				d.dirty = true
+				break
+			}
 		}
 	}
 

@@ -22,9 +22,9 @@ import (
 )
 
 const (
-	vendorName = "jump"     // the xdg application name
-	dbName     = "db.gob"   // name of the database file
-	configName = "jump.yml" // the config file name
+	vendorName = "jump"       // the xdg application name
+	dbName     = "db.gob"     // name of the database file
+	configName = "config.yml" // the config file name
 )
 
 func dirOrTmp(dir string, err error) string {

@@ -18,6 +18,7 @@ package cmd
 
 import (
 	"os"
+	"strings"
 
 	"github.com/eklitzke/jump/db"
 	"github.com/rs/zerolog/log"
@@ -43,10 +44,24 @@ var updateCmd = &cobra.Command{
 		}
 
 		// try to update each argument, first checking that it exists and is a directory
+		config := loadConfig()
+
+	dirLoop:
 		for _, dir := range args {
+			// ensure we have a directory
 			if err := db.CheckIsDir(dir); err != nil {
 				continue
 			}
+
+			// if any pattern from ExcludePatterns is a substring of
+			// this directory, skip it
+			for _, pattern := range config.ExcludePatterns {
+				if strings.Contains(dir, pattern) {
+					continue dirLoop
+				}
+			}
+
+			// ok, actually update the weight
 			handle.AdjustWeight(dir, updateWeight)
 		}
 	},
